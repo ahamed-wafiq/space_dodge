@@ -37,24 +37,31 @@ export class TerrainSegment {
   }
 
   buildFlightPathIndicators() {
-    // Replaces the giant flat orange polygon with a sleek, subtle flight corridor
+    // 3-Way Spacious Flight Highway: Left (X = -7), Center (X = 0), Right (X = +7)
 
-    // 1. Subtle glowing centerline route indicator (thin ribbon)
-    const centerLine = new THREE.Mesh(this.shared.centerRouteGeo, this.shared.routeGuideMat);
-    centerLine.position.set(0, -2.42, -this.length / 2);
-    centerLine.rotation.x = -Math.PI / 2;
-    this.group.add(centerLine);
+    // 1. Path Centerline Guidance Ribbons (Left, Center, Right)
+    for (const laneX of [-7.0, 0, 7.0]) {
+      const pathLine = new THREE.Mesh(this.shared.pathRouteGeo, this.shared.routeGuideMat);
+      pathLine.position.set(laneX, -2.42, -this.length / 2);
+      pathLine.rotation.x = -Math.PI / 2;
+      this.group.add(pathLine);
+    }
 
-    // 2. Flight corridor boundary edge markers (thin cyan guidance lines at X = +/-12)
-    const leftBoundary = new THREE.Mesh(this.shared.boundaryGeo, this.shared.boundaryMat);
-    leftBoundary.position.set(-12.5, -2.41, -this.length / 2);
-    leftBoundary.rotation.x = -Math.PI / 2;
+    // 2. Path Lane Divider Strips separating the 3 ways (at X = -3.5 and X = +3.5)
+    for (const divX of [-3.5, 3.5]) {
+      const divider = new THREE.Mesh(this.shared.pathDividerGeo, this.shared.dividerMat);
+      divider.position.set(divX, -2.41, -this.length / 2);
+      divider.rotation.x = -Math.PI / 2;
+      this.group.add(divider);
+    }
 
-    const rightBoundary = new THREE.Mesh(this.shared.boundaryGeo, this.shared.boundaryMat);
-    rightBoundary.position.set(12.5, -2.41, -this.length / 2);
-    rightBoundary.rotation.x = -Math.PI / 2;
-
-    this.group.add(leftBoundary, rightBoundary);
+    // 3. Flight Corridor Outer Boundary Markers (at X = -10.5 and X = +10.5)
+    for (const bndX of [-10.5, 10.5]) {
+      const boundary = new THREE.Mesh(this.shared.boundaryGeo, this.shared.boundaryMat);
+      boundary.position.set(bndX, -2.40, -this.length / 2);
+      boundary.rotation.x = -Math.PI / 2;
+      this.group.add(boundary);
+    }
   }
 
   buildCanyonWalls() {

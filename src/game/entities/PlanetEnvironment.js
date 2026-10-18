@@ -26,13 +26,16 @@ export class PlanetEnvironment {
     this.shared.floorGeo = new THREE.PlaneGeometry(42, this.segmentLength, 32, 48);
     this.displaceFloorVertices(this.shared.floorGeo);
 
-    // 2. Subtle Glowing Flight Path Centerline Ribbon (W: 0.35, L: 160)
-    this.shared.centerRouteGeo = new THREE.PlaneGeometry(0.35, this.segmentLength, 2, 10);
+    // 2. 3-Way Flight Path Centerline Ribbons (W: 0.35, L: 160)
+    this.shared.pathRouteGeo = new THREE.PlaneGeometry(0.35, this.segmentLength, 2, 10);
 
-    // 3. Corridor Boundary Guide Ribbons (W: 0.12, L: 160)
-    this.shared.boundaryGeo = new THREE.PlaneGeometry(0.12, this.segmentLength, 2, 10);
+    // 3. 3-Way Path Lane Divider Strips (W: 0.12, L: 160)
+    this.shared.pathDividerGeo = new THREE.PlaneGeometry(0.12, this.segmentLength, 2, 10);
 
-    // 4. Subtle Selective Magma Fissure Veins (W: 0.4, L: 160)
+    // 4. Corridor Outer Boundary Ribbons (W: 0.18, L: 160)
+    this.shared.boundaryGeo = new THREE.PlaneGeometry(0.18, this.segmentLength, 2, 10);
+
+    // 5. Subtle Selective Magma Fissure Veins (W: 0.4, L: 160)
     this.shared.subLavaGeo = new THREE.PlaneGeometry(0.4, this.segmentLength, 2, 12);
 
     // 5. Multi-tiered Canyon Cliff Walls (Height: 36, Length: 160)
@@ -71,17 +74,24 @@ export class PlanetEnvironment {
     this.shared.routeGuideMat = new THREE.MeshBasicMaterial({
       color: 0x00f0ff,
       transparent: true,
-      opacity: 0.38
+      opacity: 0.45
     });
 
-    // C. Glowing Flight Corridor Boundary Line Material
-    this.shared.boundaryMat = new THREE.MeshBasicMaterial({
+    // C. 3-Way Path Lane Divider Material (Subtle electric cyan)
+    this.shared.dividerMat = new THREE.MeshBasicMaterial({
       color: 0x0284c7,
       transparent: true,
-      opacity: 0.65
+      opacity: 0.40
     });
 
-    // D. Subtle Molten Lava Fissure Vein Material
+    // D. Glowing Flight Corridor Outer Boundary Material
+    this.shared.boundaryMat = new THREE.MeshBasicMaterial({
+      color: 0x38bdf8,
+      transparent: true,
+      opacity: 0.70
+    });
+
+    // E. Subtle Molten Lava Fissure Vein Material
     this.shared.lavaMat = new THREE.MeshBasicMaterial({
       color: 0xff4500
     });

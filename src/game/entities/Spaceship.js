@@ -13,8 +13,8 @@ export class Spaceship {
     this.position = new THREE.Vector3(0, 0, 0);
     this.velocity = 0;
     this.targetVelocity = 0;
-    this.speed = 32; // Horizontal agility
-    this.boundsX = 14; // Horizontal boundary
+    this.speed = 36; // Snappy lateral agility across the 3 paths
+    this.boundsX = 10.5; // Aligned with the outer boundaries of the 3-way path
 
     // Collision sphere
     this.boundingSphere = new THREE.Sphere(new THREE.Vector3(), 1.25);
