@@ -1,0 +1,244 @@
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@500;600;700&display=swap');
+
+:root {
+  --font-display: 'Orbitron', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-ui: 'Rajdhani', -apple-system, BlinkMacSystemFont, sans-serif;
+  --bg-deep: #030712;
+  --neon-cyan: #00f0ff;
+  --neon-blue: #0077fe;
+  --neon-orange: #ff7700;
+  --neon-red: #ff2a5f;
+  --neon-emerald: #00ffaa;
+  --glass-bg: rgba(6, 15, 33, 0.85);
+  --glass-border: rgba(0, 240, 255, 0.35);
+  --glass-glow: 0 0 25px rgba(0, 240, 255, 0.25);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+html, body, #root {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: var(--bg-deep);
+  color: #e0f2fe;
+  font-family: var(--font-ui);
+}
+
+/* Atmospheric Scanline and Vignette Effects */
+.scanlines {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  background: linear-gradient(
+    rgba(18, 16, 16, 0) 50%, 
+    rgba(0, 0, 0, 0.2) 50%
+  ), linear-gradient(
+    90deg,
+    rgba(255, 0, 0, 0.015),
+    rgba(0, 255, 0, 0.01),
+    rgba(0, 0, 255, 0.015)
+  );
+  background-size: 100% 4px, 6px 100%;
+  z-index: 10;
+  opacity: 0.5;
+}
+
+.vignette {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  box-shadow: inset 0 0 120px rgba(0, 0, 0, 0.85), inset 0 0 40px rgba(0, 240, 255, 0.06);
+  z-index: 9;
+}
+
+/* Full Screen Overlay */
+.screen-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 20;
+  pointer-events: auto;
+  background: rgba(3, 7, 18, 0.45);
+}
+
+/* HUD Overlay */
+.hud-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 20px 24px;
+  z-index: 15;
+  pointer-events: none;
+}
+
+/* Mobile Controls */
+.mobile-controls {
+  position: fixed;
+  bottom: 24px;
+  left: 0;
+  width: 100vw;
+  display: flex;
+  justify-content: space-between;
+  padding: 0 24px;
+  z-index: 25;
+  pointer-events: none;
+}
+
+@media (min-width: 768px) {
+  .mobile-controls {
+    display: none;
+  }
+}
+
+/* Glassmorphism Panels */
+.glass-panel {
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-glow), inset 0 0 20px rgba(0, 240, 255, 0.06);
+  border-radius: 14px;
+  position: relative;
+  overflow: hidden;
+}
+
+.glass-panel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 44px;
+  height: 2px;
+  background: var(--neon-cyan);
+  box-shadow: 0 0 10px var(--neon-cyan);
+}
+
+.glass-panel::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 44px;
+  height: 2px;
+  background: var(--neon-orange);
+  box-shadow: 0 0 10px var(--neon-orange);
+}
+
+/* Sci-fi Buttons */
+.cyber-btn {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  padding: 16px 32px;
+  background: linear-gradient(135deg, rgba(0, 240, 255, 0.2), rgba(0, 119, 254, 0.35));
+  border: 1.5px solid var(--neon-cyan);
+  color: #fff;
+  border-radius: 8px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 0 20px rgba(0, 240, 255, 0.35), inset 0 0 12px rgba(0, 240, 255, 0.15);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.cyber-btn:hover {
+  background: linear-gradient(135deg, rgba(0, 240, 255, 0.4), rgba(0, 119, 254, 0.55));
+  border-color: #ffffff;
+  box-shadow: 0 0 35px rgba(0, 240, 255, 0.7), inset 0 0 20px rgba(0, 240, 255, 0.4);
+  transform: translateY(-2px) scale(1.02);
+}
+
+.cyber-btn:active {
+  transform: translateY(1px) scale(0.98);
+  box-shadow: 0 0 15px rgba(0, 240, 255, 0.4);
+}
+
+.cyber-btn-red {
+  border-color: var(--neon-red);
+  background: linear-gradient(135deg, rgba(255, 42, 95, 0.25), rgba(255, 119, 0, 0.3));
+  box-shadow: 0 0 20px rgba(255, 42, 95, 0.35);
+}
+
+.cyber-btn-red:hover {
+  background: linear-gradient(135deg, rgba(255, 42, 95, 0.45), rgba(255, 119, 0, 0.5));
+  box-shadow: 0 0 35px rgba(255, 42, 95, 0.75);
+}
+
+/* Animations */
+@keyframes pulseGlow {
+  0%, 100% {
+    opacity: 0.85;
+    filter: drop-shadow(0 0 15px rgba(0, 240, 255, 0.7));
+  }
+  50% {
+    opacity: 1;
+    filter: drop-shadow(0 0 32px rgba(0, 240, 255, 1));
+  }
+}
+
+.pulse-glow {
+  animation: pulseGlow 1.8s infinite ease-in-out;
+}
+
+/* Floating Dodge Combo Alert */
+.dodge-alert {
+  position: absolute;
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  font-weight: 900;
+  color: var(--neon-cyan);
+  text-shadow: 0 0 15px var(--neon-cyan), 0 0 25px rgba(0, 240, 255, 0.8);
+  pointer-events: none;
+  animation: dodgeFly 0.85s forwards ease-out;
+  z-index: 30;
+}
+
+@keyframes dodgeFly {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 0) scale(0.7);
+  }
+  20% {
+    opacity: 1;
+    transform: translate(-50%, -20px) scale(1.2);
+  }
+  80% {
+    opacity: 1;
+    transform: translate(-50%, -50px) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -75px) scale(0.8);
+  }
+}
