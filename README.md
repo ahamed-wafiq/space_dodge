@@ -1,8 +1,8 @@
-# Space Dodge (Astro Vanguard: Void Drift) 🚀🌌
+# Space Dodge: Alien Canyon 🌋🛸
 
-A production-grade, infinite 3D spaceship obstacle avoidance and endless survival arcade game built with **React 18**, **Three.js (r169)**, **Vanilla CSS**, and **Vite**.
+An intense, production-grade 3D spaceship endless survival arcade game set in a treacherous alien planetary canyon. Built with **React 18**, **Three.js (r169)**, **Vanilla CSS**, and **Vite**.
 
-![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
+![Version](https://img.shields.io/badge/version-2.0.0-purple.svg)
 ![React](https://img.shields.io/badge/React-18.3-61dafb.svg)
 ![Three.js](https://img.shields.io/badge/Three.js-r169-black.svg)
 ![Vite](https://img.shields.io/badge/Vite-5.4-646cff.svg)
@@ -11,18 +11,23 @@ A production-grade, infinite 3D spaceship obstacle avoidance and endless surviva
 
 ## Game Overview
 
-Pilot an agile star interceptor through an endless, increasingly hazardous asteroid belt in deep space. Dodge high-velocity asteroids, magma core fragments, and cyber hazard barriers. Build combo multipliers through near-miss evasions, push your warp velocity to the absolute limits, and set the ultimate survival record!
+Navigate an agile star interceptor through an endless, volcanic alien canyon. Thread through ancient alien ruin gates, dodge massive stone pillars, weave between obsidian spires, evade falling seismic boulders, and skim glowing crystal clusters. Build combo multipliers through near-miss evasions, push your warp velocity to the limit, and set the ultimate canyon survival record!
 
 ---
 
-## Key Features
+## Key Features & Visual Direction
 
-- **Truly Endless Difficulty**: Speed and spawn frequency scale smoothly and logarithmically with survival time and score, maintaining gameplay balance without arbitrary caps or predefined endpoints.
-- **Guaranteed Solvable Corridor Solver**: Track is partitioned into 7 virtual corridors with algorithmic safe-lane guarantees, preventing impossible barrier walls while maintaining intense challenge.
-- **Zero-GC Object Pooling**: Obstacles are recycled through pre-allocated active and inactive pools using shared geometries and materials, eliminating garbage collection pauses during extended sessions.
+- **Immersive Alien Canyon Environment**: Seamless 3-segment recycling trench pipeline with volcanic cracked bedrock, molten orange lava veins, towering cliff walls flanking both sides ($X = \pm 18$), and overhead ancient stone bridges.
+- **Atmospheric Alien Sky & Lighting**: Deep alien twilight fog (`THREE.FogExp2`), ringed celestial gas giant moon, volcanic peaks, golden amber alien sunlight, and floating thermal embers/spores.
+- **Diverse 3D Environmental Obstacles**:
+  - 🏛️ **Ancient Alien Ruin Gates**: Arched portals with safe central openings you can fly straight through!
+  - 🗿 **Monolithic Stone Pillars**: Massive polygonal volcanic columns rising from the canyon bed.
+  - ⛰️ **Jagged Obsidian Spires**: Sharp rock needles jutting from canyon walls and floor.
+  - 🪨 **Falling Seismic Boulders**: Overhead rocks that tremble and plummet downward as your ship approaches.
+  - 💎 **Glowing Alien Crystals**: Luminescent cyan crystal prisms offering high-value combo bonuses.
+- **Guaranteed Solvable Corridor Solver**: Track is partitioned into 7 virtual corridors with algorithmic safe-lane guarantees, preventing mathematically impossible barrier walls.
+- **Zero-GC Object Pooling**: Terrain segments and obstacle meshes are recycled continuously through pre-allocated pools, eliminating garbage collection pauses during extended gameplay.
 - **High-Performance Decoupled HUD**: Score, warp speedometer, survival timer, and combo multiplier are updated via direct DOM element references at 60 FPS, bypassing React reconciler overhead.
-- **Dynamic 3D Spaceship Dynamics**: Procedurally constructed interceptor featuring an emissive cyan cockpit, swept-back delta wings, pulsing plasma exhaust cones, trailing particle sparks, and physics-driven banking/roll up to 32°.
-- **Dual-Layer Cosmic Warp Starfield**: 800 background galaxy stars paired with dual-chamber GPU-scrolled warp speed streaks using soft radial glow sprites.
 - **Procedural Web Audio Engine**: Real-time sound synthesis for engine pitch hum, warp dodge chimes, deep bass impact explosions, and UI chirps without external audio dependencies.
 - **Responsive Controls**: Full support for desktop keyboard controls (`A`/`D`, `←`/`→`, `Space`, `Enter`) and on-screen mobile touch steering pads.
 
@@ -76,6 +81,6 @@ npm run build
 - **Framework**: React 18
 - **3D Graphics**: Three.js (r169)
 - **Bundler**: Vite 5
-- **Styling**: Vanilla CSS (CSS Variables, Glassmorphism, Scanlines)
+- **Styling**: Pure Vanilla CSS (CSS Variables, Glassmorphism, Scanlines)
 - **Audio**: Web Audio API (Synthesizer)
 - **Icons**: Lucide React

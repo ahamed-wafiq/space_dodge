@@ -91,7 +91,7 @@ export function GameOverScreen({ stats, onRestart }) {
             MISSION TERMINATED
           </h1>
           <p style={{ color: '#94a3b8', fontSize: '0.95rem', letterSpacing: '1px' }}>
-            Spaceship destroyed by asteroid field collision.
+            Spaceship disintegrated in alien canyon collision.
           </p>
         </div>
 

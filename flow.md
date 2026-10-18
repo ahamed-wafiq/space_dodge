@@ -1,12 +1,12 @@
-# Space Dodge — Master Six-Phase Development Workflow
+# Space Dodge: Alien Canyon — Master Six-Phase Development Workflow
 
 ## Project Objective & Technology Stack
-- **Objective**: Deliver a production-grade, infinite 3D spaceship obstacle avoidance and endless survival arcade game with continuous progressive difficulty, zero-GC memory recycling, fluid controls, responsive UI/UX, and procedural audio.
+- **Objective**: Transform the game from an empty-space asteroid dodge into an immersive, production-grade 3D alien planetary canyon survival flight game. The player pilots a star interceptor through a volcanic alien trench filled with stone monoliths, ancient alien ruin gates, jagged spires, falling debris, and glowing crystal hazards with continuous progressive difficulty, zero-GC memory recycling, and procedural audio.
 - **Technology Stack**:
   - **Core**: React 18, Vite 5, JavaScript (ES Modules, JSX)
-  - **3D Graphics Engine**: Three.js (WebGL, ToneMapping, Fog, BufferGeometry, Shader-grade lighting)
-  - **Styling**: Vanilla CSS with modern glassmorphism, CRT scanline aesthetics, and CSS variables
-  - **Audio Engine**: Web Audio API (procedural synthesis for engine hum, warp dodges, explosions, and UI clicks)
+  - **3D Graphics Engine**: Three.js r169 (WebGL, ACESFilmicToneMapping, FogExp2, Shader-grade lighting)
+  - **Styling**: Pure Vanilla CSS with glassmorphism, CRT scanline aesthetics, and CSS variables
+  - **Audio Engine**: Web Audio API (procedural synthesis for thruster hum, dodge chimes, seismic rumbles, crash explosions, UI feedback)
   - **Icons**: Lucide React
 
 ---
@@ -25,109 +25,104 @@
 
 ---
 
-## Phase Breakdown
+## Six Development Phases
 
-### Phase 1: Audit and Architecture `[DONE]`
+### Phase 1: Audit and Planning `[DONE]`
 - **Dependencies**: None.
 - **Tasks**:
-  1. Inspect `package.json`, Vite configuration, and dependencies.
-  2. Audit `GameEngine.js`, Three.js lifecycle, canvas mounting, and resize handlers.
-  3. Audit `Spaceship.js`, `ObstaclePool.js`, `Starfield.js`, and `ExplosionEffect.js`.
-  4. Audit UI components (`StartScreen.jsx`, `GameHUD.jsx`, `GameOverScreen.jsx`, `MobileControls.jsx`).
-  5. Audit input handling, delta time calculation, collision detection, and restart logic.
-  6. Document architecture in `architecture.md` and initial task tracking in `task-tracker.md`.
-- **Acceptance Criteria**:
-  - Full inventory of existing codebase components, data flow, and dependencies documented.
-  - Identification of any memory leaks, lifecycle bugs, or rendering bottlenecks.
-- **Verification**: Code review, static inspection, build script execution.
+  1. Audit existing Three.js scene, entities, and lifecycle in `GameEngine.js`.
+  2. Plan modular architecture: `PlanetEnvironment.js`, `TerrainSegment.js`, `ObstacleManager.js`, `ObstaclePatterns.js`, `Spaceship.js`, `CollisionSystem.js`.
+  3. Design procedural geometries and shared materials for canyon walls, cracked volcanic terrain, stone pillars, alien ruin gates, and crystals.
+  4. Update `flow.md`, `architecture.md`, `task-tracker.md`, and `README.md`.
+- **Acceptance Criteria**: Architectural roadmap defined with zero dependency bloat.
+- **Verification**: Code review and static architecture validation.
 
 ---
 
-### Phase 2: 3D Environment & Visual Excellence `[DONE]`
+### Phase 2: 3D Alien Planet Environment `[DONE]`
 - **Dependencies**: Phase 1.
 - **Tasks**:
-  1. Deep space atmosphere: Exponential atmospheric fog (`THREE.FogExp2`), high-performance tone mapping (`ACESFilmicToneMapping`), and curated color palettes.
-  2. Dynamic Starfield: High-performance dual-chamber warp starfield with radial glow textures and speed streaks.
-  3. Spaceship 3D Model: Procedural faceted fuselage, glowing cockpit canopy, swept wings with neon edges, twin engine pods, animated plasma flame exhaust, and trailing sparks.
-  4. Asteroid & Obstacle Visuals: Multiple shared geometries (deformed dodecahedron, jagged icosahedron, oblong asteroid, cyber hazard pylon) and materials (charcoal rock, glowing magma fissure, cobalt crystal, cyber alert hazard).
-  5. Directional lighting, ambient starlight, and dynamic ship thruster point lights.
+  1. Atmospheric Setup: Deep alien twilight fog (`THREE.FogExp2` with muted purple/obsidian tone `0x0f071e`), directional alien starlight, warm lava ground glow, and cyan crystal illumination.
+  2. Procedural Canyon Trench: High-performance recycling `TerrainSegment` pipeline comprising volcanic cracked bedrock, glowing lava fissures, and flanking cliff walls ($X = \pm 18$).
+  3. Overhead Alien Arches & Geological Strata: Massive stone bridges spanning the canyon.
+  4. Atmospheric Floating Dust & Lava Sparks: Dynamic particle system creating the illusion of hot updrafts and alien atmospheric spores.
+  5. Chase Camera & Lighting: Enhanced camera tracking with lateral banking and collision trauma shake.
 - **Acceptance Criteria**:
-  - Soft circular star particles without square pixel quad artifacts.
-  - Realistic engine flare and motion blur feel.
-  - Proper specular highlights on ship hull and asteroid craters.
-- **Verification**: Verified WebGL rendering in local dev server with zero WebGL errors.
+  - Cohesive alien planet aesthetic: volcanic dark rock, purple atmospheric haze, cyan crystal highlights, orange lava veins.
+  - Zero visible gaps or seams between cycling canyon segments.
+- **Verification**: WebGL scene execution, visual validation, 60+ FPS stability.
 
 ---
 
-### Phase 3: Endless Gameplay & Mathematical Stability `[DONE]`
+### Phase 3: Endless Gameplay & Realistic Obstacles `[DONE]`
 - **Dependencies**: Phase 2.
 - **Tasks**:
-  1. Smooth lateral controls using `ArrowLeft`/`ArrowRight` and `KeyA`/`KeyD`, with banking/roll angles up to 32°.
-  2. Endless sub-linear progressive difficulty scaling:
-     $$\text{Speed} = \text{BaseSpeed} + 1.35 \times \sqrt{\text{Score}} + 0.38 \times \text{SurvivalTime}$$
-  3. Dynamic spawn frequency scaling smoothly without hard ceiling:
-     $$\text{SpawnInterval} = \max(0.35, \frac{1.05}{1 + 0.0004 \times \text{Score}})$$
-  4. Guaranteed Solvable Corridor Solver: 7-lane virtual corridor ensuring at least 1–2 clear safe lanes per wave.
-  5. High-precision bounding sphere collision detection.
-  6. Instant action on startup: initial obstacle wave at $Z \in [-55, -90, -125, -160, -195]$.
-  7. Reliable restart: complete reset of ship position, speed, obstacle pool, timers, and score.
+  1. Implement reusable obstacle classes:
+     - **Tall Stone Pillars**: Monolithic columns with irregular geometric profiles.
+     - **Pillar Pairs / Slaloms**: Paired columns requiring rapid lateral steering.
+     - **Ancient Alien Ruin Gates**: Massive arched gates with safe openings.
+     - **Jagged Rock Spires**: Tilted obsidian needles rising from floor or walls.
+     - **Falling Seismic Debris**: Overhead boulders that tremble and collapse as ship approaches.
+     - **Glowing Alien Crystals**: Clustered crystal hazards offering near-miss combo boosts.
+  2. Procedural Pattern Engine (`ObstaclePatterns.js`):
+     - Curated obstacle patterns with algorithmic safe-lane solver ensuring at least one navigable route at all times.
+  3. Progressive Difficulty Scaling:
+     - Continuous uncapped speed scaling based on survival time and score.
+     - Dynamic spawn interval scaling down to high-intensity reaction thresholds.
+  4. Accurate 3D Collision Detection:
+     - Multi-box and bounding cylinder hitboxes for ruin gates (openings are fully safe to fly through).
+  5. Immediate Initial Route: Pre-populated obstacle corridor so action starts immediately upon mission launch.
 - **Acceptance Criteria**:
-  - Continuous movement with delta-time consistency across 60Hz, 120Hz, and 144Hz.
-  - Mathematically impossible walls are prevented by the lane solver.
-  - Collision triggers game-over sequence immediately.
-- **Verification**: Interactive keyboard steering tests, collision triggering, restart reset verification.
+  - Every obstacle pattern is guaranteed solvable; impossible walls are mathematically prevented.
+  - Falling debris activates dynamically when the player approaches within reaction distance.
+- **Verification**: Collision testing, passage through gate openings, difficulty scaling validation.
 
 ---
 
-### Phase 4: Professional UI/UX & High-Performance HUD `[DONE]`
+### Phase 4: Professional Sci-Fi UI/UX `[DONE]`
 - **Dependencies**: Phase 3.
 - **Tasks**:
-  1. Pure Vanilla CSS layout (`.screen-overlay`, `.hud-overlay`, `.mobile-controls`, `.glass-panel`) in `index.css`.
-  2. Start Screen: Holographic title, flight controls briefing, high score badge, audio toggle, and "START MISSION" button.
-  3. 60 FPS HUD: Direct DOM ref updates (`useImperativeHandle`) for score, velocity meter, survival timer, combo multiplier, and dodged count without causing React re-renders.
-  4. Floating Dodge combo notifications (`+120 EVADED! (2X)`).
-  5. Game Over Screen: Red alert banner, final score, new record celebration, telemetry stats, and "REDEPLOY SHIP" action.
-  6. Responsive mobile touch controls (`MobileControls.jsx`).
-  7. Keyboard shortcuts: `Space` or `Enter` to start or restart instantly.
+  1. Update UI theme to "Alien Canyon Expeditions — Void Drift".
+  2. Start Screen: Mission briefing for planetary canyon survival, controls guide, high score badge, audio toggle.
+  3. Live Decoupled HUD: Direct-DOM 60 FPS update of score, velocity, survival timer, combo multiplier, and dodged count.
+  4. Game Over Screen: Critical telemetry debrief (Distance Traveled, Canyon Obstacles Cleared, Max Velocity, New Record).
+  5. Responsive touch steering pads for mobile/tablet.
+  6. Keyboard shortcuts: `Space` and `Enter` for instant launch and restart.
 - **Acceptance Criteria**:
-  - Overlays render cleanly centered and aligned on all screen sizes.
-  - Zero React VDOM churn during 60 FPS gameplay loops.
-  - UI accurately mirrors real-time Three.js engine state.
-- **Verification**: Browser layout verification, responsiveness check, DOM inspector validation.
+  - UI accurately reflects real-time planetary flight telemetry with zero React re-render overhead.
+- **Verification**: Responsive layout inspection, button interactions, keyboard trigger checks.
 
 ---
 
-### Phase 5: Memory Management & Zero-GC Optimization `[DONE]`
+### Phase 5: Memory Management & Performance `[DONE]`
 - **Dependencies**: Phase 4.
 - **Tasks**:
-  1. Object pooling for obstacles: Pre-allocated active and inactive pool (`ObstaclePool.js`).
-  2. Shared geometries and materials instantiated once and reused across all obstacles.
-  3. Off-screen cleanup: Asteroids crossing behind the camera are returned to the pool, not deleted or garbage-collected.
-  4. Single persistent `requestAnimationFrame` loop tracked with cancellation on dispose.
-  5. Complete resource disposal on component unmount: geometries, materials, textures, renderer, event listeners.
+  1. Object pooling for all canyon obstacles (pillars, gates, spires, falling rocks, crystals).
+  2. Segment recycling: Passed canyon segments are shifted forward along $+Z$, preventing heap allocations.
+  3. Shared geometries and materials: Volcanic rock, alien glyph stone, glowing lava, and cyan crystal materials shared across all instances.
+  4. Resource disposal: Complete cleanup of WebGL buffers, textures, materials, and event listeners on component unmount.
+  5. RAF Loop Management: Single loop tracked with ID, preventing duplicate loops across restarts.
 - **Acceptance Criteria**:
-  - Memory heap profile remains stable over prolonged play sessions.
-  - Zero duplicate RAF loops on restarts.
-  - No memory leaks or orphaned event listeners.
-- **Verification**: Code review of pool lifecycle, unmount cleanup, garbage collection stability.
+  - Flat memory heap profile during extended gameplay sessions.
+  - Zero garbage collection pauses or frame rate dips.
+- **Verification**: Memory profiling, extended session loop check, clean restart verification.
 
 ---
 
-### Phase 6: QA, Build, and Delivery `[DONE]`
+### Phase 6: QA, Build & Delivery `[DONE]`
 - **Dependencies**: Phase 1–5.
 - **Tasks**:
-  1. Full production bundle verification with `npm run build`.
-  2. Zero linter or compilation errors.
-  3. HTTP server verification on port 5001.
-  4. Documentation synchronization: `flow.md`, `architecture.md`, `task-tracker.md`, `README.md`.
+  1. Run `npm run build` and resolve any bundling issues.
+  2. Verify HTTP 200 response on local dev server (port 5001).
+  3. Verify all documentation (`flow.md`, `architecture.md`, `task-tracker.md`, `README.md`).
+  4. Commit and push changes to GitHub repository.
 - **Acceptance Criteria**:
-  - `npm run build` succeeds cleanly.
-  - Game serves correctly with HTTP 200.
-  - All documentation is fully updated.
-- **Verification**: Production build execution (`npm run build`) and HTTP curl verification.
+  - Clean production build with 0 errors.
+  - All verified features documented with exact run commands.
+- **Verification**: Production build output, HTTP curl check, Git push verification.
 
 ---
 
 ## Known Issues & Outstanding Risks
-- **External Extension Warnings**: Browser extensions (e.g. Web3 wallets) may inject scripts producing harmless `contentscript.js` warnings; these do not affect the game.
-- **GitHub Remote Authentication**: Pushing to the remote GitHub repository requires standard user authorization (browser sign-in or PAT) via Git Credential Manager.
+- **Browser Extension Injections**: Harmless `contentscript.js` logs from third-party browser extensions do not affect gameplay.
+- **GitHub Remote Authentication**: Local credential helper configured to `manager`; authenticated push supported.

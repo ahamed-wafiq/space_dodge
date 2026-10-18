@@ -1,14 +1,14 @@
 import * as THREE from 'three';
-import { Starfield } from './entities/Starfield';
+import { PlanetEnvironment } from './entities/PlanetEnvironment';
 import { Spaceship } from './entities/Spaceship';
-import { ObstaclePool } from './entities/ObstaclePool';
+import { ObstacleManager } from './entities/ObstacleManager';
 import { ExplosionEffect } from './entities/ExplosionEffect';
 import { soundManager } from '../audio/SoundManager';
 
 export class GameEngine {
   constructor(canvasContainer, callbacks = {}) {
     this.container = canvasContainer;
-    this.callbacks = callbacks; // onGameOver, onHUDUpdate, onDodgeAlert
+    this.callbacks = callbacks; // onGameOver, onHUDUpdate, onDodgeAlert, onAutoStart
 
     // Game state: 'READY', 'RUNNING', 'GAME_OVER'
     this.gameState = 'READY';
@@ -18,7 +18,7 @@ export class GameEngine {
     this.highScore = parseInt(localStorage.getItem('astrovanguard_highscore') || '0', 10);
     this.survivalTime = 0;
     this.obstaclesDodged = 0;
-    this.baseSpeed = 38;
+    this.baseSpeed = 40;
     this.currentSpeed = this.baseSpeed;
     this.maxSpeedReached = this.baseSpeed;
 
@@ -35,7 +35,7 @@ export class GameEngine {
     this.cameraShakeIntensity = 0;
     this.cameraShakeDecay = 2.5;
 
-    // Animation frame tracking (prevent duplicate loops)
+    // Animation frame tracking
     this.rafId = null;
     this.isDisposed = false;
     this.clock = new THREE.Clock();
@@ -52,15 +52,15 @@ export class GameEngine {
     const width = this.container.clientWidth || window.innerWidth;
     const height = this.container.clientHeight || window.innerHeight;
 
-    // 1. Scene with Deep Space Atmospheric Fog
+    // 1. Scene with Deep Alien Twilight Atmospheric Canyon Fog
     this.scene = new THREE.Scene();
-    this.scene.fog = new THREE.FogExp2(0x030712, 0.0055);
+    this.scene.fog = new THREE.FogExp2(0x0e071e, 0.0072);
 
-    // 2. Camera
+    // 2. Camera: Third-Person Canyon Chase Camera
     this.camera = new THREE.PerspectiveCamera(65, width / height, 0.1, 1000);
-    this.cameraBasePos = new THREE.Vector3(0, 3.8, 8.5);
+    this.cameraBasePos = new THREE.Vector3(0, 4.0, 9.0);
     this.camera.position.copy(this.cameraBasePos);
-    this.camera.lookAt(0, 0.5, -20);
+    this.camera.lookAt(0, 1.2, -22);
 
     // 3. WebGL Renderer
     this.renderer = new THREE.WebGLRenderer({
@@ -71,25 +71,27 @@ export class GameEngine {
     this.renderer.setSize(width, height);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.15;
-    this.renderer.setClearColor(0x030712, 1);
+    this.renderer.toneMappingExposure = 1.25;
+    this.renderer.setClearColor(0x0e071e, 1);
 
     this.container.appendChild(this.renderer.domElement);
 
-    // 4. Lighting
-    const ambientLight = new THREE.AmbientLight(0x1e293b, 1.2);
+    // 4. Lighting: Alien Sun, Twilight Ambient, Magma Ground Reflection
+    const ambientLight = new THREE.AmbientLight(0x241442, 1.5);
     this.scene.add(ambientLight);
 
-    const dirLight = new THREE.DirectionalLight(0xe0f2fe, 2.0);
-    dirLight.position.set(-15, 25, 12);
-    this.scene.add(dirLight);
+    // Golden Amber Alien Sun casting sharp rims on canyon cliffs
+    const sunLight = new THREE.DirectionalLight(0xffa436, 2.4);
+    sunLight.position.set(-20, 35, 15);
+    this.scene.add(sunLight);
 
-    const rimLight = new THREE.DirectionalLight(0x00f0ff, 1.4);
-    rimLight.position.set(0, -10, -20);
-    this.scene.add(rimLight);
+    // Volcanic Magma Bounce Light from below
+    const magmaLight = new THREE.DirectionalLight(0xff3300, 1.2);
+    magmaLight.position.set(0, -15, -10);
+    this.scene.add(magmaLight);
 
-    // Ship thruster point light
-    this.thrusterLight = new THREE.PointLight(0x00f0ff, 2.5, 15);
+    // Ship Thruster Point Light
+    this.thrusterLight = new THREE.PointLight(0x00f0ff, 2.5, 16);
     this.thrusterLight.position.set(0, 0, 3);
     this.scene.add(this.thrusterLight);
 
@@ -106,11 +108,11 @@ export class GameEngine {
   }
 
   initEntities() {
-    this.starfield = new Starfield(this.scene);
+    this.planetEnv = new PlanetEnvironment(this.scene);
     this.spaceship = new Spaceship(this.scene);
 
-    // Obstacle pool with dodge reward callback
-    this.obstaclePool = new ObstaclePool(this.scene, (obstacle) => {
+    // Obstacle manager with dodge reward callback
+    this.obstacleManager = new ObstacleManager(this.scene, (obstacle) => {
       this.handleObstacleDodged(obstacle);
     });
 
@@ -171,9 +173,8 @@ export class GameEngine {
     this.gameState = 'RUNNING';
     this.clock.start();
     soundManager.startEngine();
-    this.obstaclePool.spawnInitialWave(this.currentSpeed);
+    this.obstacleManager.spawnInitialWave(this.currentSpeed);
 
-    // Start single loop if not running
     if (!this.rafId) {
       this.tick();
     }
@@ -184,10 +185,16 @@ export class GameEngine {
 
     this.obstaclesDodged++;
     this.combo++;
-    this.comboTimer = 2.4; // 2.4 seconds to keep combo alive
+    this.comboTimer = 2.4;
     this.comboMultiplier = Math.min(8, 1 + Math.floor(this.combo / 3));
 
-    const bonus = 120 * this.comboMultiplier;
+    // Bonus points: Crystal hazards give +200, Gates give +180, Pillars give +120
+    let baseBonus = 120;
+    if (obstacle.type === 'CRYSTAL') baseBonus = 200;
+    else if (obstacle.type === 'GATE') baseBonus = 180;
+    else if (obstacle.type === 'FALLING') baseBonus = 150;
+
+    const bonus = baseBonus * this.comboMultiplier;
     this.score += bonus;
 
     soundManager.playDodge();
@@ -204,15 +211,9 @@ export class GameEngine {
   checkCollisions() {
     if (this.gameState !== 'RUNNING') return;
 
-    const shipSphere = this.spaceship.getBoundingSphere();
-    const active = this.obstaclePool.activeObstacles;
-
-    for (let i = 0; i < active.length; i++) {
-      const obstacle = active[i];
-      if (shipSphere.intersectsSphere(obstacle.boundingSphere)) {
-        this.triggerGameOver();
-        break;
-      }
+    const isHit = this.obstacleManager.checkCollision(this.spaceship.group.position, 1.25);
+    if (isHit) {
+      this.triggerGameOver();
     }
   }
 
@@ -222,7 +223,7 @@ export class GameEngine {
     // Visual & Audio destruction
     this.spaceship.setVisible(false);
     this.explosion.trigger(this.spaceship.group.position);
-    this.cameraShakeIntensity = 1.4;
+    this.cameraShakeIntensity = 1.6;
 
     soundManager.stopEngine();
     soundManager.playExplosion();
@@ -260,8 +261,9 @@ export class GameEngine {
     // Reset entities
     this.spaceship.reset();
     this.spaceship.setVisible(true);
-    this.obstaclePool.reset();
-    this.obstaclePool.spawnInitialWave(this.currentSpeed);
+    this.planetEnv.reset();
+    this.obstacleManager.reset();
+    this.obstacleManager.spawnInitialWave(this.currentSpeed);
     this.explosion.reset();
 
     // Reset clock and start
@@ -269,7 +271,6 @@ export class GameEngine {
     this.gameState = 'RUNNING';
     soundManager.startEngine();
 
-    // Ensure loop continues without creating duplicates
     if (!this.rafId) {
       this.tick();
     }
@@ -281,16 +282,14 @@ export class GameEngine {
     this.rafId = requestAnimationFrame(this.tick);
 
     const rawDelta = this.clock.getDelta();
-    // Clamp delta to prevent physics jumps on lag spikes or tab switching
     const delta = Math.min(rawDelta, 0.08);
 
     if (this.gameState === 'RUNNING') {
       this.survivalTime += delta;
 
-      // Truly Endless Difficulty Scaling (Gradual, continuous, sub-linear logarithmic)
-      // Score-based & Time-based smooth acceleration with no hard cap
-      const scoreProgress = Math.sqrt(this.score) * 1.35;
-      const timeProgress = this.survivalTime * 0.38;
+      // Truly Endless Difficulty Scaling (Gradual, continuous, sub-linear)
+      const scoreProgress = Math.sqrt(this.score) * 1.4;
+      const timeProgress = this.survivalTime * 0.4;
       this.currentSpeed = this.baseSpeed + scoreProgress + timeProgress;
 
       if (this.currentSpeed > this.maxSpeedReached) {
@@ -298,7 +297,7 @@ export class GameEngine {
       }
 
       // Continuous Survival Score
-      this.score += delta * (this.currentSpeed * 1.8);
+      this.score += delta * (this.currentSpeed * 2.0);
 
       // Combo Decay
       if (this.comboTimer > 0) {
@@ -314,7 +313,8 @@ export class GameEngine {
 
       // Update Entities
       this.spaceship.update(delta, this.inputDir);
-      this.obstaclePool.update(delta, this.currentSpeed, this.score, this.spaceship.group.position);
+      this.planetEnv.update(delta, this.currentSpeed);
+      this.obstacleManager.update(delta, this.currentSpeed, this.score, this.spaceship.group.position);
       this.checkCollisions();
 
       // Update Thruster Light position to follow ship
@@ -334,12 +334,11 @@ export class GameEngine {
         });
       }
     } else if (this.gameState === 'READY') {
-      // Ship controls remain live so user can test steering before launch
+      // Ship controls remain live in preview
       this.spaceship.update(delta, this.inputDir);
+      this.planetEnv.update(delta, 20);
     }
 
-    // Always update visual background, explosion particles, and camera
-    this.starfield.update(delta, this.gameState === 'RUNNING' ? this.currentSpeed : 22);
     this.explosion.update(delta);
 
     // Camera follow & Camera Shake
@@ -349,9 +348,13 @@ export class GameEngine {
   };
 
   updateCamera(delta) {
-    // Third-person smooth camera tracking of ship's X position
-    const targetCamX = this.spaceship.group.position.x * 0.45;
-    this.camera.position.x = THREE.MathUtils.lerp(this.camera.position.x, targetCamX, delta * 6);
+    // Third-person smooth camera tracking of ship's X position with subtle bank
+    const targetCamX = this.spaceship.group.position.x * 0.48;
+    this.camera.position.x = THREE.MathUtils.lerp(this.camera.position.x, targetCamX, delta * 6.5);
+
+    // Camera tilt following spaceship bank
+    const targetRoll = - (this.spaceship.group.position.x / 14) * 0.08;
+    this.camera.rotation.z = THREE.MathUtils.lerp(this.camera.rotation.z, targetRoll, delta * 5);
 
     // Apply Camera Shake on collision
     if (this.cameraShakeIntensity > 0) {
@@ -377,9 +380,9 @@ export class GameEngine {
     window.removeEventListener('keyup', this.onKeyUp);
 
     // Dispose entities
-    if (this.starfield) this.starfield.dispose();
+    if (this.planetEnv) this.planetEnv.dispose();
     if (this.spaceship) this.spaceship.dispose();
-    if (this.obstaclePool) this.obstaclePool.dispose();
+    if (this.obstacleManager) this.obstacleManager.dispose();
     if (this.explosion) this.explosion.dispose();
 
     // Dispose WebGLRenderer and remove DOM

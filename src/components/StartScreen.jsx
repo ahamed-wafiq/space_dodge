@@ -108,7 +108,7 @@ export function StartScreen({ onStart, highScore, isMuted, onToggleMute }) {
               margin: '0 0 6px 0'
             }}
           >
-            ASTRO VANGUARD
+            SPACE DODGE
           </h1>
           <div 
             style={{
@@ -120,7 +120,7 @@ export function StartScreen({ onStart, highScore, isMuted, onToggleMute }) {
               textTransform: 'uppercase'
             }}
           >
-            // VOID DRIFT: ENDLESS SURVIVAL
+            // ALIEN CANYON: VOLCANIC TRENCH RUN
           </div>
         </div>
 
