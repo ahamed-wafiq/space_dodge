@@ -321,7 +321,8 @@ export class ObstacleManager {
   }
 
   spawnInitialWave(speed = 38) {
-    const initialZ = [-55, -95, -135, -175, -215];
+    // Generous runway on initial launch: first obstacle starts at -140 units (over 3.5s reaction time)
+    const initialZ = [-140, -220, -300, -380];
     for (const z of initialZ) {
       const wave = this.patternEngine.generateWave(0);
       for (const def of wave) {
@@ -331,26 +332,26 @@ export class ObstacleManager {
   }
 
   update(delta, shipSpeed, score, shipPosition) {
-    // 1. Spawning with progressive difficulty
-    const spawnInterval = Math.max(0.32, 1.1 / (1 + 0.00045 * score));
-    this.spawnTimer += delta;
+    // 1. Spawning with progressive distance spacing (guaranteeing spacious breathing room)
+    const speed = shipSpeed * delta;
+    this.distanceTraveledSinceSpawn = (this.distanceTraveledSinceSpawn || 0) + speed;
 
-    if (this.spawnTimer >= spawnInterval) {
-      this.spawnTimer = 0;
+    const minWaveDistance = Math.max(68, 92 - (score * 0.003));
+    if (this.distanceTraveledSinceSpawn >= minWaveDistance) {
+      this.distanceTraveledSinceSpawn = 0;
       const wave = this.patternEngine.generateWave(score);
-      const spawnZ = -230 - Math.random() * 20;
+      const spawnZ = -260;
       for (const def of wave) {
         this.spawnItem(def, spawnZ);
       }
     }
 
     // 2. Move active obstacles toward camera and handle custom behaviors
-    const speed = shipSpeed * delta;
     for (let i = this.activeObstacles.length - 1; i >= 0; i--) {
       const item = this.activeObstacles[i];
       item.group.position.z += speed;
 
-      // Falling boulder dynamics: triggers when player is within 80 units
+      // Falling boulder dynamics: triggers when player is within 85 units
       if (item.type === 'FALLING') {
         item.boulderMesh.rotation.x += item.rotSpeedX * delta;
         item.boulderMesh.rotation.y += item.rotSpeedY * delta;
@@ -387,7 +388,7 @@ export class ObstacleManager {
     }
   }
 
-  checkCollision(shipPosition, shipRadius = 1.25) {
+  checkCollision(shipPosition, shipRadius = 0.95) {
     for (let i = 0; i < this.activeObstacles.length; i++) {
       const item = this.activeObstacles[i];
       const pos = item.group.position;
@@ -398,20 +399,21 @@ export class ObstacleManager {
 
       if (item.type === 'GATE') {
         // Ancient Ruin Gate:
-        // Doorway width: 6.4 units wide, centered at pos.x
-        // Safe gateway opening: X in [pos.x - 2.8, pos.x + 2.8], Y under 6.5
+        // Doorway width: 6.4 * scale units wide, centered at pos.x
         const dx = shipPosition.x - pos.x;
         const dy = shipPosition.y;
 
         // Inside open door width & height? 100% SAFE fly-through!
-        if (Math.abs(dx) < 2.8 && dy < 6.5) {
+        const safePortalWidth = 3.0 * item.scale;
+        if (Math.abs(dx) < safePortalWidth && dy < (7.2 * item.scale)) {
           continue;
         }
 
         // Check if hitting left column, right column, or top lintel
-        const hitLeftCol = Math.abs(dx - (-4.4)) < (1.3 + shipRadius) && dz < (2.0 + shipRadius);
-        const hitRightCol = Math.abs(dx - 4.4) < (1.3 + shipRadius) && dz < (2.0 + shipRadius);
-        const hitTopLintel = Math.abs(dx) < 6.0 && dy > 6.8 && dz < (2.0 + shipRadius);
+        const colDist = 4.4 * item.scale;
+        const hitLeftCol = Math.abs(dx - (-colDist)) < (1.1 * item.scale + shipRadius) && dz < (1.8 + shipRadius);
+        const hitRightCol = Math.abs(dx - colDist) < (1.1 * item.scale + shipRadius) && dz < (1.8 + shipRadius);
+        const hitTopLintel = Math.abs(dx) < (5.8 * item.scale) && dy > (7.2 * item.scale) && dz < (1.8 + shipRadius);
 
         if (hitLeftCol || hitRightCol || hitTopLintel) {
           return true;
@@ -419,14 +421,14 @@ export class ObstacleManager {
       } else if (item.type === 'PILLAR') {
         const dx = shipPosition.x - pos.x;
         const distXZ = Math.sqrt(dx * dx + dz * dz);
-        const pillarRadius = 1.8 * item.scale;
+        const pillarRadius = 1.25 * item.scale;
         if (distXZ < (pillarRadius + shipRadius)) {
           return true;
         }
       } else if (item.type === 'SPIRE') {
         const dx = shipPosition.x - pos.x;
         const distXZ = Math.sqrt(dx * dx + dz * dz);
-        const spireRadius = 1.65 * item.scale;
+        const spireRadius = 1.15 * item.scale;
         if (distXZ < (spireRadius + shipRadius)) {
           return true;
         }
@@ -434,14 +436,14 @@ export class ObstacleManager {
         const dx = shipPosition.x - pos.x;
         const dy = shipPosition.y - pos.y;
         const dist3D = Math.sqrt(dx * dx + dy * dy + dz * dz);
-        const boulderRadius = 2.1 * item.scale;
+        const boulderRadius = 1.35 * item.scale;
         if (dist3D < (boulderRadius + shipRadius)) {
           return true;
         }
       } else if (item.type === 'CRYSTAL') {
         const dx = shipPosition.x - pos.x;
         const distXZ = Math.sqrt(dx * dx + dz * dz);
-        const crystalRadius = 1.35 * item.scale;
+        const crystalRadius = 1.05 * item.scale;
         if (distXZ < (crystalRadius + shipRadius)) {
           return true;
         }
@@ -453,6 +455,7 @@ export class ObstacleManager {
 
   reset() {
     this.spawnTimer = 0;
+    this.distanceTraveledSinceSpawn = 0;
     this.totalDodged = 0;
 
     for (let i = 0; i < this.activeObstacles.length; i++) {

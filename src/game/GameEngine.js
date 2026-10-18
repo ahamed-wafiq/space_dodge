@@ -58,10 +58,10 @@ export class GameEngine {
     this.scene.fog = new THREE.FogExp2(0x0c1322, 0.0058);
 
     // 2. Camera: Optimized Third-Person Chase Camera with Clear View Ahead
-    this.camera = new THREE.PerspectiveCamera(62, width / height, 0.1, 1000);
-    this.cameraBasePos = new THREE.Vector3(0, 3.6, 9.2);
+    this.camera = new THREE.PerspectiveCamera(58, width / height, 0.1, 1000);
+    this.cameraBasePos = new THREE.Vector3(0, 4.3, 11.2);
     this.camera.position.copy(this.cameraBasePos);
-    this.camera.lookAt(0, 1.1, -28);
+    this.camera.lookAt(0, 1.2, -35);
 
     // 3. WebGL Renderer with High-Fidelity ACES Filmic Tone Mapping
     this.renderer = new THREE.WebGLRenderer({
