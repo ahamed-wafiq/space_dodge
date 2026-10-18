@@ -44,8 +44,9 @@ export class GameEngine {
     this.initEntities();
     this.initInputListeners();
 
-    // Initial render
-    this.renderer.render(this.scene, this.camera);
+    // Start render & physics animation loop immediately
+    this.clock.start();
+    this.tick();
   }
 
   initThree() {
@@ -121,6 +122,9 @@ export class GameEngine {
       this.handleObstacleDodged(obstacle);
     });
 
+    // Spawn initial wave so obstacles are immediately visible in the canyon
+    this.obstacleManager.spawnInitialWave(this.currentSpeed);
+
     this.explosion = new ExplosionEffect(this.scene);
   }
 
@@ -140,6 +144,14 @@ export class GameEngine {
             this.callbacks.onAutoStart();
           } else {
             this.start();
+          }
+        }
+      } else if (this.gameState === 'GAME_OVER') {
+        if (['Space', 'Enter'].includes(e.code)) {
+          if (this.callbacks.onRestart) {
+            this.callbacks.onRestart();
+          } else {
+            this.restart();
           }
         }
       }
@@ -176,9 +188,7 @@ export class GameEngine {
   start() {
     if (this.gameState === 'RUNNING') return;
     this.gameState = 'RUNNING';
-    this.clock.start();
     soundManager.startEngine();
-    this.obstacleManager.spawnInitialWave(this.currentSpeed);
 
     if (!this.rafId) {
       this.tick();
@@ -341,7 +351,10 @@ export class GameEngine {
     } else if (this.gameState === 'READY') {
       // Ship controls remain live in preview
       this.spaceship.update(delta, this.inputDir);
-      this.planetEnv.update(delta, 20);
+      this.planetEnv.update(delta, 18);
+      this.obstacleManager.update(delta, 18, 0, this.spaceship.group.position);
+      this.thrusterLight.position.x = this.spaceship.group.position.x;
+      this.thrusterLight.position.y = this.spaceship.group.position.y;
     }
 
     this.explosion.update(delta);

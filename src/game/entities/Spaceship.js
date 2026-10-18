@@ -24,8 +24,8 @@ export class Spaceship {
 
     // Engine thruster offset coordinates
     this.engineOffsets = [
-      { x: -1.08, y: 0.05, z: 2.3 },
-      { x: 1.08, y: 0.05, z: 2.3 }
+      { x: -0.98, y: 0.05, z: 2.2 },
+      { x: 0.98, y: 0.05, z: 2.2 }
     ];
 
     // Build procedural fallback first so ship is instantly visible
@@ -70,8 +70,9 @@ export class Spaceship {
           this.modelGroup.remove(c);
         }
 
-        // Adjust scale and orientation for perfect in-game proportions
+        // Adjust scale and orientation so nose faces forward down the canyon (-Z)
         model.scale.set(0.9, 0.9, 0.9);
+        model.rotation.y = Math.PI;
         model.position.set(0, 0, 0);
         this.modelGroup.add(model);
       },

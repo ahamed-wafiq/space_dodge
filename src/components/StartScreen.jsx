@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Play, Volume2, VolumeX, Shield, Zap } from 'lucide-react';
 import { soundManager } from '../audio/SoundManager';
 
@@ -13,17 +13,6 @@ export function StartScreen({ onStart, highScore, isMuted, onToggleMute }) {
     soundManager.playClick();
     onToggleMute();
   };
-
-  // Keyboard shortcut: Space, Enter, or Arrow Keys automatically launch mission
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (['Space', 'Enter', 'ArrowLeft', 'ArrowRight', 'KeyA', 'KeyD'].includes(e.code)) {
-        handleStart();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
 
   return (
     <div className="screen-overlay" onClick={handleStart}>

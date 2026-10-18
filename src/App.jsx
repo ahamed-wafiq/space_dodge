@@ -47,6 +47,14 @@ export default function App() {
     }
   }, []);
 
+  // Restart mission
+  const handleRestartMission = useCallback(() => {
+    setGameState('PLAYING');
+    if (engineRef.current) {
+      engineRef.current.restart();
+    }
+  }, []);
+
   // Initialize GameEngine
   useEffect(() => {
     if (!containerRef.current) return;
@@ -55,7 +63,8 @@ export default function App() {
       onGameOver: handleGameOver,
       onHUDUpdate: handleHUDUpdate,
       onDodgeAlert: handleDodgeAlert,
-      onAutoStart: handleStartMission
+      onAutoStart: handleStartMission,
+      onRestart: handleRestartMission
     });
 
     engineRef.current = engine;
@@ -64,15 +73,7 @@ export default function App() {
       engine.dispose();
       engineRef.current = null;
     };
-  }, [handleGameOver, handleHUDUpdate, handleDodgeAlert, handleStartMission]);
-
-  // Restart mission
-  const handleRestartMission = () => {
-    setGameState('PLAYING');
-    if (engineRef.current) {
-      engineRef.current.restart();
-    }
-  };
+  }, [handleGameOver, handleHUDUpdate, handleDodgeAlert, handleStartMission, handleRestartMission]);
 
   // Audio mute toggle
   const handleToggleMute = () => {

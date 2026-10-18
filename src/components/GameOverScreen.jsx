@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { RotateCcw, Trophy, Clock, Target, Gauge, AlertTriangle } from 'lucide-react';
 import { soundManager } from '../audio/SoundManager';
 
@@ -9,17 +9,6 @@ export function GameOverScreen({ stats, onRestart }) {
     soundManager.playClick();
     onRestart();
   };
-
-  // Space or Enter restarts immediately
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (['Space', 'Enter'].includes(e.code)) {
-        handleRestart();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
 
   const mins = Math.floor(survivalTime / 60);
   const secs = Math.floor(survivalTime % 60);
