@@ -52,17 +52,17 @@ export class GameEngine {
     const width = this.container.clientWidth || window.innerWidth;
     const height = this.container.clientHeight || window.innerHeight;
 
-    // 1. Scene with Deep Alien Twilight Atmospheric Canyon Fog
+    // 1. Scene with Deep Emerald/Cyan & Indigo Atmospheric Canyon Fog
     this.scene = new THREE.Scene();
-    this.scene.fog = new THREE.FogExp2(0x0e071e, 0.0072);
+    this.scene.fog = new THREE.FogExp2(0x0c1322, 0.0058);
 
-    // 2. Camera: Third-Person Canyon Chase Camera
-    this.camera = new THREE.PerspectiveCamera(65, width / height, 0.1, 1000);
-    this.cameraBasePos = new THREE.Vector3(0, 4.0, 9.0);
+    // 2. Camera: Optimized Third-Person Chase Camera with Clear View Ahead
+    this.camera = new THREE.PerspectiveCamera(62, width / height, 0.1, 1000);
+    this.cameraBasePos = new THREE.Vector3(0, 3.6, 9.2);
     this.camera.position.copy(this.cameraBasePos);
-    this.camera.lookAt(0, 1.2, -22);
+    this.camera.lookAt(0, 1.1, -28);
 
-    // 3. WebGL Renderer
+    // 3. WebGL Renderer with High-Fidelity ACES Filmic Tone Mapping
     this.renderer = new THREE.WebGLRenderer({
       powerPreference: 'high-performance',
       antialias: true,
@@ -71,27 +71,32 @@ export class GameEngine {
     this.renderer.setSize(width, height);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.25;
-    this.renderer.setClearColor(0x0e071e, 1);
+    this.renderer.toneMappingExposure = 1.32;
+    this.renderer.setClearColor(0x0c1322, 1);
 
     this.container.appendChild(this.renderer.domElement);
 
-    // 4. Lighting: Alien Sun, Twilight Ambient, Magma Ground Reflection
-    const ambientLight = new THREE.AmbientLight(0x241442, 1.5);
+    // 4. Balanced Lighting: Eliminates Crushed Blacks and Reveals Silhouettes
+    // A. Hemisphere Light: Sky Cool Cyan, Ground Warm Dark Violet
+    const hemiLight = new THREE.HemisphereLight(0x38bdf8, 0x1a1228, 1.4);
+    this.scene.add(hemiLight);
+
+    // B. Ambient Base Light
+    const ambientLight = new THREE.AmbientLight(0x18122c, 1.0);
     this.scene.add(ambientLight);
 
-    // Golden Amber Alien Sun casting sharp rims on canyon cliffs
-    const sunLight = new THREE.DirectionalLight(0xffa436, 2.4);
-    sunLight.position.set(-20, 35, 15);
+    // C. Directional Sun (Cool Cyan-White Rim on Rock Cliffs and Spaceship Hull)
+    const sunLight = new THREE.DirectionalLight(0x93c5fd, 2.2);
+    sunLight.position.set(-28, 48, 18);
     this.scene.add(sunLight);
 
-    // Volcanic Magma Bounce Light from below
-    const magmaLight = new THREE.DirectionalLight(0xff3300, 1.2);
-    magmaLight.position.set(0, -15, -10);
-    this.scene.add(magmaLight);
+    // D. Warm Fill Light (Subtle Amber Glow on Canyon Right Wall)
+    const fillLight = new THREE.DirectionalLight(0xf59e0b, 0.65);
+    fillLight.position.set(28, 16, -14);
+    this.scene.add(fillLight);
 
-    // Ship Thruster Point Light
-    this.thrusterLight = new THREE.PointLight(0x00f0ff, 2.5, 16);
+    // E. Dynamic Ship Thruster Point Light
+    this.thrusterLight = new THREE.PointLight(0x00f0ff, 2.2, 18);
     this.thrusterLight.position.set(0, 0, 3);
     this.scene.add(this.thrusterLight);
 

@@ -1,10 +1,13 @@
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { getRadialGlowTexture } from '../utils/textures';
 
 export class Spaceship {
   constructor(scene) {
     this.scene = scene;
     this.group = new THREE.Group();
+    this.modelGroup = new THREE.Group();
+    this.group.add(this.modelGroup);
 
     // Movement state
     this.position = new THREE.Vector3(0, 0, 0);
@@ -19,142 +22,200 @@ export class Spaceship {
     // Track allocated resources for clean disposal
     this.disposables = [];
 
-    this.createShipMesh();
+    // Engine thruster offset coordinates
+    this.engineOffsets = [
+      { x: -1.08, y: 0.05, z: 2.3 },
+      { x: 1.08, y: 0.05, z: 2.3 }
+    ];
+
+    // Build procedural fallback first so ship is instantly visible
+    this.createProceduralShip();
     this.createThrusterFlames();
     this.createEngineParticles();
+
+    // Load detailed Blender GLTF model
+    this.loadGLTFModel('/models/spaceship.glb');
 
     this.group.position.set(0, 0, 0);
     this.scene.add(this.group);
   }
 
-  createShipMesh() {
-    // 1. Sleek Central Fuselage
-    const hullGeo = new THREE.ConeGeometry(0.9, 4.2, 5);
-    hullGeo.rotateX(Math.PI / 2);
-    hullGeo.scale(1.2, 0.6, 1);
-    const hullMat = new THREE.MeshStandardMaterial({
-      color: 0x111827,
-      metalness: 0.85,
-      roughness: 0.25,
-      flatShading: true
-    });
-    const hull = new THREE.Mesh(hullGeo, hullMat);
-    hull.position.z = 0;
-    this.group.add(hull);
-    this.disposables.push(hullGeo, hullMat);
+  loadGLTFModel(url) {
+    const loader = new GLTFLoader();
+    loader.load(
+      url,
+      (gltf) => {
+        const model = gltf.scene;
 
-    // 2. Cockpit Canopy with Neon Glow
-    const cockpitGeo = new THREE.ConeGeometry(0.42, 1.8, 4);
-    cockpitGeo.rotateX(Math.PI / 2);
-    cockpitGeo.scale(1.0, 0.65, 1.0);
-    const cockpitMat = new THREE.MeshStandardMaterial({
-      color: 0x00f0ff,
-      emissive: 0x00f0ff,
-      emissiveIntensity: 0.8,
-      metalness: 0.3,
-      roughness: 0.1,
+        // Traverse to tune materials for optimal metallic and emissive response
+        model.traverse((child) => {
+          if (child.isMesh) {
+            child.castShadow = true;
+            child.receiveShadow = true;
+            if (child.material) {
+              child.material.envMapIntensity = 1.2;
+              // Ensure neon/emissive materials pop
+              if (child.material.name && child.material.name.includes('Neon')) {
+                child.material.emissiveIntensity = 2.8;
+              } else if (child.material.name && child.material.name.includes('Thruster')) {
+                child.material.emissiveIntensity = 4.5;
+              }
+            }
+          }
+        });
+
+        // Clear procedural geometry and mount GLTF model
+        while (this.modelGroup.children.length > 0) {
+          const c = this.modelGroup.children[0];
+          this.modelGroup.remove(c);
+        }
+
+        // Adjust scale and orientation for perfect in-game proportions
+        model.scale.set(0.9, 0.9, 0.9);
+        model.position.set(0, 0, 0);
+        this.modelGroup.add(model);
+      },
+      undefined,
+      (err) => {
+        console.warn('GLTF spaceship load fallback to procedural geometry:', err);
+      }
+    );
+  }
+
+  createProceduralShip() {
+    // High-fidelity procedural mesh matching Image 2 reference:
+    // Sleek metallic graphite fuselage, silver bevels, swept delta wings, cyan neon accents
+
+    const matHull = new THREE.MeshStandardMaterial({
+      color: 0x161a22,
+      metalness: 0.88,
+      roughness: 0.22,
+      flatShading: false
+    });
+
+    const matSilver = new THREE.MeshStandardMaterial({
+      color: 0xb0b8c4,
+      metalness: 0.94,
+      roughness: 0.16
+    });
+
+    const matCanopy = new THREE.MeshStandardMaterial({
+      color: 0x0284c7,
+      metalness: 0.2,
+      roughness: 0.05,
       transparent: true,
-      opacity: 0.95
+      opacity: 0.92,
+      emissive: 0x0369a1,
+      emissiveIntensity: 0.3
     });
-    const cockpit = new THREE.Mesh(cockpitGeo, cockpitMat);
-    cockpit.position.set(0, 0.32, -0.4);
-    this.group.add(cockpit);
-    this.disposables.push(cockpitGeo, cockpitMat);
 
-    // 3. Swept-Back Main Wings
-    const wingShape = new THREE.Shape();
-    wingShape.moveTo(0, 0.4);
-    wingShape.lineTo(3.2, -1.2);
-    wingShape.lineTo(3.1, -1.8);
-    wingShape.lineTo(0.6, -1.3);
-    wingShape.lineTo(0, -1.6);
-    wingShape.lineTo(-0.6, -1.3);
-    wingShape.lineTo(-3.1, -1.8);
-    wingShape.lineTo(-3.2, -1.2);
-    wingShape.closePath();
-
-    const extrudeSettings = { depth: 0.1, bevelEnabled: true, bevelSegments: 2, steps: 1, bevelSize: 0.04, bevelThickness: 0.04 };
-    const wingGeo = new THREE.ExtrudeGeometry(wingShape, extrudeSettings);
-    wingGeo.rotateX(Math.PI / 2);
-    const wingMat = new THREE.MeshStandardMaterial({
-      color: 0x1f2937,
-      metalness: 0.7,
-      roughness: 0.3
-    });
-    const wings = new THREE.Mesh(wingGeo, wingMat);
-    wings.position.set(0, 0, 0.4);
-    this.group.add(wings);
-    this.disposables.push(wingGeo, wingMat);
-
-    // 4. Neon Wingtip Glow Strips
-    const glowStripGeo = new THREE.BoxGeometry(0.12, 0.08, 1.2);
-    const glowStripMat = new THREE.MeshBasicMaterial({
+    const matNeon = new THREE.MeshBasicMaterial({
       color: 0x00f0ff
     });
-    const leftStrip = new THREE.Mesh(glowStripGeo, glowStripMat);
-    leftStrip.position.set(-3.05, 0.05, 0.8);
-    const rightStrip = new THREE.Mesh(glowStripGeo, glowStripMat);
-    rightStrip.position.set(3.05, 0.05, 0.8);
-    this.group.add(leftStrip, rightStrip);
-    this.disposables.push(glowStripGeo, glowStripMat);
 
-    // 5. Twin Engine Thruster Housings
-    const engineGeo = new THREE.CylinderGeometry(0.28, 0.32, 1.2, 8);
-    engineGeo.rotateX(Math.PI / 2);
-    const engineMat = new THREE.MeshStandardMaterial({
-      color: 0x374151,
-      metalness: 0.9,
-      roughness: 0.2
-    });
+    // 1. Central Aerodynamic Fuselage
+    const fuseGeo = new THREE.CylinderGeometry(0.85, 0.95, 3.8, 16);
+    fuseGeo.rotateX(Math.PI / 2);
+    fuseGeo.scale(1.35, 0.44, 1.0);
+    const fuse = new THREE.Mesh(fuseGeo, matHull);
+    this.modelGroup.add(fuse);
+    this.disposables.push(fuseGeo, matHull);
 
-    const leftEngine = new THREE.Mesh(engineGeo, engineMat);
-    leftEngine.position.set(-0.7, 0, 1.6);
-    const rightEngine = new THREE.Mesh(engineGeo, engineMat);
-    rightEngine.position.set(0.7, 0, 1.6);
-    this.group.add(leftEngine, rightEngine);
-    this.disposables.push(engineGeo, engineMat);
+    // 2. Needle Tapered Nose
+    const noseGeo = new THREE.ConeGeometry(0.95, 2.2, 12);
+    noseGeo.rotateX(-Math.PI / 2);
+    noseGeo.scale(1.3, 0.40, 1.0);
+    const nose = new THREE.Mesh(noseGeo, matSilver);
+    nose.position.set(0, 0.02, -2.6);
+    this.modelGroup.add(nose);
+    this.disposables.push(noseGeo, matSilver);
+
+    // 3. Cockpit Canopy Bubble Glass
+    const canopyGeo = new THREE.SphereGeometry(0.55, 16, 12);
+    canopyGeo.scale(0.75, 0.5, 2.1);
+    const canopy = new THREE.Mesh(canopyGeo, matCanopy);
+    canopy.position.set(0, 0.3, -0.6);
+    this.modelGroup.add(canopy);
+    this.disposables.push(canopyGeo, matCanopy);
+
+    // 4. Swept Delta Wings
+    const wingGeo = new THREE.BoxGeometry(5.8, 0.12, 1.8);
+    const wings = new THREE.Mesh(wingGeo, matHull);
+    wings.position.set(0, -0.04, 0.35);
+    this.modelGroup.add(wings);
+    this.disposables.push(wingGeo);
+
+    // Wingtip Stabilizer Winglets and Cyan Strips
+    for (const side of [-1, 1]) {
+      const tipGeo = new THREE.BoxGeometry(0.12, 0.75, 1.4);
+      const tip = new THREE.Mesh(tipGeo, matSilver);
+      tip.position.set(side * 2.9, 0.32, 0.35);
+      tip.rotation.z = -0.22 * side;
+      this.modelGroup.add(tip);
+      this.disposables.push(tipGeo);
+
+      const stripGeo = new THREE.BoxGeometry(1.8, 0.06, 0.08);
+      const strip = new THREE.Mesh(stripGeo, matNeon);
+      strip.position.set(side * 1.95, 0.04, 0.3);
+      this.modelGroup.add(strip);
+      this.disposables.push(stripGeo);
+    }
+
+    // 5. Dual Heavy Engine Cowlings
+    for (const off of this.engineOffsets) {
+      const cowGeo = new THREE.CylinderGeometry(0.44, 0.48, 2.3, 16);
+      cowGeo.rotateX(Math.PI / 2);
+      const cow = new THREE.Mesh(cowGeo, matSilver);
+      cow.position.set(off.x, off.y, off.z - 1.15);
+      this.modelGroup.add(cow);
+      this.disposables.push(cowGeo);
+
+      // Neon Trim Ring
+      const ringGeo = new THREE.TorusGeometry(0.46, 0.05, 8, 20);
+      const ring = new THREE.Mesh(ringGeo, matNeon);
+      ring.position.set(off.x, off.y, off.z - 0.4);
+      this.modelGroup.add(ring);
+      this.disposables.push(ringGeo);
+    }
   }
 
   createThrusterFlames() {
-    // Twin Glowing Plasma Thruster Cones
-    const flameGeo = new THREE.ConeGeometry(0.24, 1.4, 8);
+    this.flameMeshes = [];
+    this.innerFlameMeshes = [];
+
+    const flameGeo = new THREE.ConeGeometry(0.32, 1.6, 12);
     flameGeo.rotateX(-Math.PI / 2);
     const flameMat = new THREE.MeshBasicMaterial({
       color: 0x00f0ff,
       transparent: true,
-      opacity: 0.9
+      opacity: 0.88
     });
 
-    this.leftFlame = new THREE.Mesh(flameGeo, flameMat);
-    this.leftFlame.position.set(-0.7, 0, 2.5);
-
-    this.rightFlame = new THREE.Mesh(flameGeo, flameMat);
-    this.rightFlame.position.set(0.7, 0, 2.5);
-
-    this.group.add(this.leftFlame, this.rightFlame);
-    this.disposables.push(flameGeo, flameMat);
-
-    // Inner bright core flame
-    const innerFlameGeo = new THREE.ConeGeometry(0.12, 1.0, 8);
-    innerFlameGeo.rotateX(-Math.PI / 2);
-    const innerFlameMat = new THREE.MeshBasicMaterial({
+    const innerGeo = new THREE.ConeGeometry(0.16, 1.1, 10);
+    innerGeo.rotateX(-Math.PI / 2);
+    const innerMat = new THREE.MeshBasicMaterial({
       color: 0xffffff,
       transparent: true,
       opacity: 0.95
     });
 
-    this.leftInnerFlame = new THREE.Mesh(innerFlameGeo, innerFlameMat);
-    this.leftInnerFlame.position.set(-0.7, 0, 2.3);
+    for (const off of this.engineOffsets) {
+      const flame = new THREE.Mesh(flameGeo, flameMat);
+      flame.position.set(off.x, off.y, off.z + 0.8);
+      this.group.add(flame);
+      this.flameMeshes.push(flame);
 
-    this.rightInnerFlame = new THREE.Mesh(innerFlameGeo, innerFlameMat);
-    this.rightInnerFlame.position.set(0.7, 0, 2.3);
+      const inner = new THREE.Mesh(innerGeo, innerMat);
+      inner.position.set(off.x, off.y, off.z + 0.55);
+      this.group.add(inner);
+      this.innerFlameMeshes.push(inner);
+    }
 
-    this.group.add(this.leftInnerFlame, this.rightInnerFlame);
-    this.disposables.push(innerFlameGeo, innerFlameMat);
+    this.disposables.push(flameGeo, flameMat, innerGeo, innerMat);
   }
 
   createEngineParticles() {
-    this.particleCount = 50;
+    this.particleCount = 60;
     this.particlesGeo = new THREE.BufferGeometry();
     this.particlePositions = new Float32Array(this.particleCount * 3);
     this.particleLife = new Float32Array(this.particleCount);
@@ -166,11 +227,11 @@ export class Spaceship {
     this.particlesGeo.setAttribute('position', new THREE.BufferAttribute(this.particlePositions, 3));
 
     this.particlesMat = new THREE.PointsMaterial({
-      color: 0x00f0ff,
-      size: 0.35,
+      color: 0x38bdf8,
+      size: 0.38,
       map: getRadialGlowTexture(),
       transparent: true,
-      opacity: 0.85,
+      opacity: 0.8,
       blending: THREE.AdditiveBlending,
       depthWrite: false
     });
@@ -182,21 +243,21 @@ export class Spaceship {
 
   resetParticle(index, randomizeZ = false) {
     const i3 = index * 3;
-    const side = index % 2 === 0 ? -0.7 : 0.7;
-    this.particlePositions[i3] = side + (Math.random() - 0.5) * 0.2;
-    this.particlePositions[i3 + 1] = (Math.random() - 0.5) * 0.2;
-    this.particlePositions[i3 + 2] = randomizeZ ? 2.2 + Math.random() * 4.0 : 2.2;
+    const off = this.engineOffsets[index % this.engineOffsets.length];
+    this.particlePositions[i3] = off.x + (Math.random() - 0.5) * 0.22;
+    this.particlePositions[i3 + 1] = off.y + (Math.random() - 0.5) * 0.2;
+    this.particlePositions[i3 + 2] = randomizeZ ? off.z + 0.8 + Math.random() * 4.5 : off.z + 0.8;
     this.particleLife[index] = Math.random();
   }
 
   update(delta, inputDir) {
-    // 1. Smooth horizontal movement with acceleration & damping
+    // 1. Smooth horizontal movement with agile acceleration
     this.targetVelocity = inputDir * this.speed;
-    this.velocity = THREE.MathUtils.lerp(this.velocity, this.targetVelocity, delta * 14);
+    this.velocity = THREE.MathUtils.lerp(this.velocity, this.targetVelocity, delta * 15);
 
     this.group.position.x += this.velocity * delta;
 
-    // Hard clamp to playable track with soft edge deceleration
+    // Hard boundary clamping
     if (this.group.position.x > this.boundsX) {
       this.group.position.x = this.boundsX;
       this.velocity = 0;
@@ -206,29 +267,30 @@ export class Spaceship {
     }
 
     // 2. Smooth Banking / Roll Rotation
-    // Roll when steering: bank up to ~32 degrees
-    const targetRoll = - (this.velocity / this.speed) * 0.58;
+    const targetRoll = - (this.velocity / this.speed) * 0.55;
     this.group.rotation.z = THREE.MathUtils.lerp(this.group.rotation.z, targetRoll, delta * 12);
 
-    // Subtle natural nose pitch and idle sway
-    const targetPitch = Math.sin(Date.now() * 0.003) * 0.03;
+    // Subtle pitch and idle engine tremor
+    const targetPitch = Math.sin(Date.now() * 0.0035) * 0.025;
     this.group.rotation.x = THREE.MathUtils.lerp(this.group.rotation.x, targetPitch, delta * 8);
 
-    // 3. Thruster Flame Flicker & Pulsing
-    const flameScale = 0.9 + Math.sin(Date.now() * 0.04) * 0.2 + (Math.abs(inputDir) * 0.15);
-    this.leftFlame.scale.set(1, 1, flameScale);
-    this.rightFlame.scale.set(1, 1, flameScale);
-    this.leftInnerFlame.scale.set(1, 1, flameScale * 0.9);
-    this.rightInnerFlame.scale.set(1, 1, flameScale * 0.9);
+    // 3. Thruster Flame Dynamics
+    const flicker = 0.92 + Math.sin(Date.now() * 0.05) * 0.18 + (Math.abs(inputDir) * 0.2);
+    for (const flame of this.flameMeshes) {
+      flame.scale.set(1, 1, flicker);
+    }
+    for (const inner of this.innerFlameMeshes) {
+      inner.scale.set(1, 1, flicker * 0.92);
+    }
 
     // 4. Update Engine Particles
     const pos = this.particlesGeo.attributes.position.array;
     for (let i = 0; i < this.particleCount; i++) {
       const i3 = i * 3;
-      pos[i3 + 2] += delta * 24; // Stream back
-      this.particleLife[i] -= delta * 3.5;
+      pos[i3 + 2] += delta * 26; // Stream back
+      this.particleLife[i] -= delta * 3.2;
 
-      if (this.particleLife[i] <= 0 || pos[i3 + 2] > 7) {
+      if (this.particleLife[i] <= 0 || pos[i3 + 2] > 8) {
         this.resetParticle(i, false);
       }
     }
@@ -236,7 +298,7 @@ export class Spaceship {
 
     // 5. Update Collision Sphere
     this.boundingSphere.center.copy(this.group.position);
-    this.boundingSphere.center.z += 0.2; // Center of mass
+    this.boundingSphere.center.z += 0.2;
   }
 
   reset() {

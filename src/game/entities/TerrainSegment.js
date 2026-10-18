@@ -8,6 +8,7 @@ export class TerrainSegment {
     this.group = new THREE.Group();
 
     this.buildFloor();
+    this.buildFlightPathIndicators();
     this.buildCanyonWalls();
     this.buildOverheadArch();
     this.buildLedgeCrystals();
@@ -16,76 +17,91 @@ export class TerrainSegment {
   }
 
   buildFloor() {
-    // 1. Volcanic Bedrock Ground Plane
+    // 1. Natural Volcanic Basalt Bedrock Ground Plane (Full canyon floor)
     const floorMesh = new THREE.Mesh(this.shared.floorGeo, this.shared.basaltMat);
     floorMesh.position.set(0, -2.5, -this.length / 2);
     floorMesh.rotation.x = -Math.PI / 2;
     floorMesh.receiveShadow = true;
     this.group.add(floorMesh);
 
-    // 2. Central Magma Lava Fissure Ribbon
-    const lavaMesh = new THREE.Mesh(this.shared.lavaGeo, this.shared.lavaMat);
-    lavaMesh.position.set(0, -2.44, -this.length / 2);
-    lavaMesh.rotation.x = -Math.PI / 2;
-    this.group.add(lavaMesh);
-
-    // 3. Flanking Lava Crack Lines (subtle glowing veins)
+    // 2. Selective subtle magma fissure cracks (thin, organic, NOT dominating)
     const leftCrack = new THREE.Mesh(this.shared.subLavaGeo, this.shared.lavaMat);
-    leftCrack.position.set(-7.5, -2.43, -this.length / 2);
+    leftCrack.position.set(-6.5, -2.44, -this.length / 2);
     leftCrack.rotation.x = -Math.PI / 2;
+
     const rightCrack = new THREE.Mesh(this.shared.subLavaGeo, this.shared.lavaMat);
-    rightCrack.position.set(7.5, -2.43, -this.length / 2);
+    rightCrack.position.set(6.5, -2.44, -this.length / 2);
     rightCrack.rotation.x = -Math.PI / 2;
+
     this.group.add(leftCrack, rightCrack);
   }
 
+  buildFlightPathIndicators() {
+    // Replaces the giant flat orange polygon with a sleek, subtle flight corridor
+
+    // 1. Subtle glowing centerline route indicator (thin ribbon)
+    const centerLine = new THREE.Mesh(this.shared.centerRouteGeo, this.shared.routeGuideMat);
+    centerLine.position.set(0, -2.42, -this.length / 2);
+    centerLine.rotation.x = -Math.PI / 2;
+    this.group.add(centerLine);
+
+    // 2. Flight corridor boundary edge markers (thin cyan guidance lines at X = +/-12)
+    const leftBoundary = new THREE.Mesh(this.shared.boundaryGeo, this.shared.boundaryMat);
+    leftBoundary.position.set(-12.5, -2.41, -this.length / 2);
+    leftBoundary.rotation.x = -Math.PI / 2;
+
+    const rightBoundary = new THREE.Mesh(this.shared.boundaryGeo, this.shared.boundaryMat);
+    rightBoundary.position.set(12.5, -2.41, -this.length / 2);
+    rightBoundary.rotation.x = -Math.PI / 2;
+
+    this.group.add(leftBoundary, rightBoundary);
+  }
+
   buildCanyonWalls() {
-    // Flanking cliff walls on Left (X = -18) and Right (X = +18)
-    // Left Wall
+    // Flanking multi-tiered cliff walls on Left (X = -19) and Right (X = +19)
     const leftWall = new THREE.Mesh(this.shared.wallGeo, this.shared.rockCliffMat);
-    leftWall.position.set(-18.5, 12, -this.length / 2);
+    leftWall.position.set(-19.0, 13, -this.length / 2);
     leftWall.rotation.y = 0;
     this.group.add(leftWall);
 
-    // Right Wall
     const rightWall = new THREE.Mesh(this.shared.wallGeo, this.shared.rockCliffMat);
-    rightWall.position.set(18.5, 12, -this.length / 2);
+    rightWall.position.set(19.0, 13, -this.length / 2);
     rightWall.rotation.y = Math.PI;
     this.group.add(rightWall);
 
-    // Additional rocky buttresses along the wall to create organic silhouette
-    const buttressZ = [-25, -65, -105, -145];
+    // Columnar basalt outcroppings and stone pillars jutting from the canyon walls
+    const buttressZ = [-20, -55, -90, -125, -150];
     for (let i = 0; i < buttressZ.length; i++) {
       const z = buttressZ[i];
-      // Left rocky jut
+      // Left rocky spire / buttress
       const leftButtress = new THREE.Mesh(this.shared.buttressGeo, this.shared.rockCliffMat);
-      leftButtress.position.set(-17.2, 8, z);
-      leftButtress.rotation.set((i % 2) * 0.2, (i * 0.7), 0.1);
-      leftButtress.scale.set(1.4, 1.8, 1.4);
+      leftButtress.position.set(-17.5, 9, z);
+      leftButtress.rotation.set((i % 2) * 0.15, (i * 0.8), 0.08);
+      leftButtress.scale.set(1.3, 1.9, 1.3);
       this.group.add(leftButtress);
 
-      // Right rocky jut
+      // Right rocky spire / buttress
       const rightButtress = new THREE.Mesh(this.shared.buttressGeo, this.shared.rockCliffMat);
-      rightButtress.position.set(17.2, 8, z - 15);
-      rightButtress.rotation.set(-(i % 2) * 0.2, -(i * 0.7), -0.1);
-      rightButtress.scale.set(1.5, 1.7, 1.3);
+      rightButtress.position.set(17.5, 9, z - 16);
+      rightButtress.rotation.set(-(i % 2) * 0.15, -(i * 0.8), -0.08);
+      rightButtress.scale.set(1.4, 1.8, 1.2);
       this.group.add(rightButtress);
     }
   }
 
   buildOverheadArch() {
-    // Majestic alien stone bridge spanning high over the canyon (Y = 17, well above flight path)
+    // Ancient alien stone bridge spanning high over the canyon (Y = 17, safely above flight corridor)
     const arch = new THREE.Mesh(this.shared.overheadArchGeo, this.shared.ancientStoneMat);
-    arch.position.set(0, 16.5, -this.length * 0.5);
+    arch.position.set(0, 17.0, -this.length * 0.5);
     this.group.add(arch);
   }
 
   buildLedgeCrystals() {
-    // Glowing cyan alien crystals nestled on canyon wall niches
+    // Glowing cyan alien crystals nestled in canyon wall niches
     const crystalSpots = [
-      { x: -16.8, y: 3.5, z: -35 },
-      { x: 16.8, y: 5.0, z: -85 },
-      { x: -16.5, y: 4.2, z: -125 }
+      { x: -17.2, y: 3.8, z: -35 },
+      { x: 17.2, y: 5.2, z: -80 },
+      { x: -17.0, y: 4.5, z: -125 }
     ];
 
     for (const spot of crystalSpots) {

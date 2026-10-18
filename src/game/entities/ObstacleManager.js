@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { ObstaclePatterns } from './ObstaclePatterns';
 
 export class ObstacleManager {
@@ -14,58 +15,127 @@ export class ObstacleManager {
     this.spawnTimer = 0;
     this.totalDodged = 0;
 
+    // GLTF model templates loaded from Blender
+    this.gateTemplate = null;
+    this.pillarTemplate = null;
+
     this.initSharedResources();
     this.preallocatePool();
+    this.loadGLTFModels();
+  }
+
+  loadGLTFModels() {
+    const loader = new GLTFLoader();
+
+    // 1. Load Alien Gate GLB
+    loader.load(
+      '/models/alien_gate.glb',
+      (gltf) => {
+        this.gateTemplate = gltf.scene;
+        this.gateTemplate.traverse((child) => {
+          if (child.isMesh) {
+            child.castShadow = true;
+            child.receiveShadow = true;
+            if (child.material && child.material.name && child.material.name.includes('Rune')) {
+              child.material.emissiveIntensity = 3.5;
+            } else if (child.material && child.material.name && child.material.name.includes('Amber')) {
+              child.material.emissiveIntensity = 4.0;
+            }
+          }
+        });
+        // Attach to pool items that haven't been customized yet
+        this.applyTemplateToPool('GATE', this.gateTemplate);
+      },
+      undefined,
+      (err) => console.warn('GLTF alien gate fallback to procedural mesh:', err)
+    );
+
+    // 2. Load Stratified Rock Pillar GLB
+    loader.load(
+      '/models/rock_pillar.glb',
+      (gltf) => {
+        this.pillarTemplate = gltf.scene;
+        this.pillarTemplate.traverse((child) => {
+          if (child.isMesh) {
+            child.castShadow = true;
+            child.receiveShadow = true;
+          }
+        });
+        this.applyTemplateToPool('PILLAR', this.pillarTemplate);
+      },
+      undefined,
+      (err) => console.warn('GLTF rock pillar fallback to procedural mesh:', err)
+    );
+  }
+
+  applyTemplateToPool(type, template) {
+    const allItems = [...this.inactivePool, ...this.activeObstacles];
+    for (const item of allItems) {
+      if (type === 'GATE' && !item.gltfGate) {
+        item.gltfGate = template.clone();
+        item.gltfGate.visible = false;
+        item.group.add(item.gltfGate);
+        if (item.type === 'GATE' && item.group.visible) {
+          item.gateGroup.visible = false;
+          item.gltfGate.visible = true;
+        }
+      } else if (type === 'PILLAR' && !item.gltfPillar) {
+        item.gltfPillar = template.clone();
+        item.gltfPillar.visible = false;
+        item.group.add(item.gltfPillar);
+        if (item.type === 'PILLAR' && item.group.visible) {
+          item.pillarMesh.visible = false;
+          item.gltfPillar.visible = true;
+        }
+      }
+    }
   }
 
   initSharedResources() {
     this.geos = {};
     this.mats = {};
 
-    // 1. Basalt Stone Pillar (Octagonal Column, H: 22, R: 1.6)
-    this.geos.pillar = new THREE.CylinderGeometry(1.4, 1.8, 22, 8);
-    this.geos.pillar.translate(0, 11, 0); // Base at y=0
+    // 1. Basalt Stone Pillar (Multi-tiered Column with strata edges, H: 22, R: 1.7)
+    this.geos.pillar = new THREE.CylinderGeometry(1.5, 1.9, 22, 9);
+    this.geos.pillar.translate(0, 11, 0);
 
     // 2. Ancient Alien Ruin Gate (Compound: Left Pillar, Right Pillar, Top Lintel)
-    // Left & Right Gate Pillars (W: 1.8, H: 14, D: 2.5)
-    this.geos.gatePillar = new THREE.BoxGeometry(1.8, 14, 2.8);
-    this.geos.gatePillar.translate(0, 7, 0);
+    this.geos.gatePillar = new THREE.BoxGeometry(2.2, 15, 3.2);
+    this.geos.gatePillar.translate(0, 7.5, 0);
 
-    // Top Arch Lintel (W: 9.0, H: 2.2, D: 3.2)
-    this.geos.gateLintel = new THREE.BoxGeometry(9.0, 2.2, 3.2);
-    this.geos.gateLintel.translate(0, 12.8, 0);
+    this.geos.gateLintel = new THREE.BoxGeometry(11.0, 2.6, 3.6);
+    this.geos.gateLintel.translate(0, 14.0, 0);
 
-    // Glowing Gate Keystone Rune
-    this.geos.gateKeystone = new THREE.OctahedronGeometry(1.2, 0);
-    this.geos.gateKeystone.translate(0, 11.2, 0);
+    this.geos.gateKeystone = new THREE.OctahedronGeometry(1.4, 0);
+    this.geos.gateKeystone.translate(0, 12.2, 0);
 
-    // 3. Jagged Rock Spire (Cone with vertex displacement)
-    this.geos.spire = new THREE.ConeGeometry(2.0, 16, 6);
-    this.geos.spire.translate(0, 8, 0);
+    // 3. Jagged Rock Spire (Cone with vertex tilt, H: 16)
+    this.geos.spire = new THREE.ConeGeometry(2.2, 17, 7);
+    this.geos.spire.translate(0, 8.5, 0);
 
-    // 4. Seismic Falling Boulder
-    this.geos.boulder = new THREE.DodecahedronGeometry(2.2, 1);
-    this.geos.boulder.scale(1.2, 1.0, 1.1);
+    // 4. Seismic Falling Boulder (Faceted fractured sphere)
+    this.geos.boulder = new THREE.DodecahedronGeometry(2.3, 1);
+    this.geos.boulder.scale(1.2, 1.0, 1.15);
 
-    // 5. Alien Crystal Cluster
-    this.geos.crystal = new THREE.ConeGeometry(1.2, 7.0, 5);
-    this.geos.crystal.translate(0, 3.5, 0);
+    // 5. Alien Crystal Cluster (Prismatic glowing shards)
+    this.geos.crystal = new THREE.ConeGeometry(1.3, 7.5, 5);
+    this.geos.crystal.translate(0, 3.75, 0);
 
-    // Shared Materials
-    // Basalt Stone Material
+    // Shared Materials with Rich PBR Response
+    // Basalt Stone Material (Dark charcoal slate with slight sheen)
     this.mats.basalt = new THREE.MeshStandardMaterial({
-      color: 0x221a2e,
+      color: 0x1f2430,
       roughness: 0.85,
-      metalness: 0.2,
+      metalness: 0.22,
       flatShading: true
     });
 
     // Ancient Ruin Stone Material with Subtle Cyan Sigils
     this.mats.ancientGate = new THREE.MeshStandardMaterial({
-      color: 0x1f1930,
+      color: 0x1a1e2b,
       emissive: 0x00f0ff,
-      emissiveIntensity: 0.18,
-      roughness: 0.7,
+      emissiveIntensity: 0.16,
+      roughness: 0.72,
       metalness: 0.35,
       flatShading: true
     });
@@ -75,19 +145,19 @@ export class ObstacleManager {
       color: 0x00f0ff
     });
 
-    // Volcanic Obsidian Spire Material (Dark Glossy Slate)
+    // Volcanic Obsidian Spire Material
     this.mats.spire = new THREE.MeshStandardMaterial({
-      color: 0x130e1c,
-      roughness: 0.4,
-      metalness: 0.7,
+      color: 0x151821,
+      roughness: 0.45,
+      metalness: 0.65,
       flatShading: true
     });
 
     // Magma Cracked Boulder Material
     this.mats.boulder = new THREE.MeshStandardMaterial({
-      color: 0x2c1520,
+      color: 0x241724,
       emissive: 0xff4500,
-      emissiveIntensity: 0.45,
+      emissiveIntensity: 0.42,
       roughness: 0.8,
       metalness: 0.2,
       flatShading: true
@@ -97,9 +167,9 @@ export class ObstacleManager {
     this.mats.crystal = new THREE.MeshStandardMaterial({
       color: 0x00f0ff,
       emissive: 0x00f0ff,
-      emissiveIntensity: 0.85,
+      emissiveIntensity: 0.9,
       roughness: 0.15,
-      metalness: 0.4,
+      metalness: 0.35,
       transparent: true,
       opacity: 0.95
     });
@@ -116,19 +186,19 @@ export class ObstacleManager {
   createPooledContainer() {
     const group = new THREE.Group();
 
-    // 1. Pillar Mesh
+    // 1. Procedural Pillar Mesh
     const pillarMesh = new THREE.Mesh(this.geos.pillar, this.mats.basalt);
     pillarMesh.visible = false;
     group.add(pillarMesh);
 
-    // 2. Ancient Gate Group (Compound: Left, Right, Lintel, Rune)
+    // 2. Procedural Ancient Gate Group
     const gateGroup = new THREE.Group();
     gateGroup.visible = false;
 
     const leftCol = new THREE.Mesh(this.geos.gatePillar, this.mats.ancientGate);
-    leftCol.position.x = -3.8;
+    leftCol.position.x = -4.4;
     const rightCol = new THREE.Mesh(this.geos.gatePillar, this.mats.ancientGate);
-    rightCol.position.x = 3.8;
+    rightCol.position.x = 4.4;
     const lintel = new THREE.Mesh(this.geos.gateLintel, this.mats.ancientGate);
     const keystone = new THREE.Mesh(this.geos.gateKeystone, this.mats.runeCore);
 
@@ -150,6 +220,21 @@ export class ObstacleManager {
     crystalMesh.visible = false;
     group.add(crystalMesh);
 
+    // GLTF clone holders
+    let gltfGate = null;
+    if (this.gateTemplate) {
+      gltfGate = this.gateTemplate.clone();
+      gltfGate.visible = false;
+      group.add(gltfGate);
+    }
+
+    let gltfPillar = null;
+    if (this.pillarTemplate) {
+      gltfPillar = this.pillarTemplate.clone();
+      gltfPillar.visible = false;
+      group.add(gltfPillar);
+    }
+
     this.scene.add(group);
 
     return {
@@ -159,6 +244,8 @@ export class ObstacleManager {
       spireMesh,
       boulderMesh,
       crystalMesh,
+      gltfGate,
+      gltfPillar,
       type: null,
       x: 0,
       y: 0,
@@ -180,12 +267,14 @@ export class ObstacleManager {
       item = this.createPooledContainer();
     }
 
-    // Hide all sub-meshes first
+    // Hide all sub-meshes
     item.pillarMesh.visible = false;
     item.gateGroup.visible = false;
     item.spireMesh.visible = false;
     item.boulderMesh.visible = false;
     item.crystalMesh.visible = false;
+    if (item.gltfGate) item.gltfGate.visible = false;
+    if (item.gltfPillar) item.gltfPillar.visible = false;
 
     item.type = def.type;
     item.x = def.x;
@@ -200,12 +289,21 @@ export class ObstacleManager {
     item.group.scale.set(item.scale, item.scale, item.scale);
     item.group.rotation.set(0, 0, 0);
 
-    // Show appropriate sub-mesh
+    // Display appropriate visual mesh (GLTF preferred, procedural fallback)
     if (def.type === 'PILLAR') {
-      item.pillarMesh.visible = true;
-      item.pillarMesh.rotation.y = Math.random() * Math.PI;
+      if (item.gltfPillar) {
+        item.gltfPillar.visible = true;
+        item.gltfPillar.rotation.y = Math.random() * Math.PI;
+      } else {
+        item.pillarMesh.visible = true;
+        item.pillarMesh.rotation.y = Math.random() * Math.PI;
+      }
     } else if (def.type === 'GATE') {
-      item.gateGroup.visible = true;
+      if (item.gltfGate) {
+        item.gltfGate.visible = true;
+      } else {
+        item.gateGroup.visible = true;
+      }
     } else if (def.type === 'SPIRE') {
       item.spireMesh.visible = true;
       item.spireMesh.rotation.set((Math.random() - 0.5) * 0.35, Math.random() * Math.PI, (Math.random() - 0.5) * 0.35);
@@ -240,44 +338,39 @@ export class ObstacleManager {
     if (this.spawnTimer >= spawnInterval) {
       this.spawnTimer = 0;
       const wave = this.patternEngine.generateWave(score);
-      const spawnZ = -170 - Math.random() * 20;
+      const spawnZ = -230 - Math.random() * 20;
       for (const def of wave) {
         this.spawnItem(def, spawnZ);
       }
     }
 
-    // 2. Move & Animate Active Obstacles
-    const recycleThreshold = 25;
-    const dodgeZ = shipPosition.z + 1.2;
-
+    // 2. Move active obstacles toward camera and handle custom behaviors
+    const speed = shipSpeed * delta;
     for (let i = this.activeObstacles.length - 1; i >= 0; i--) {
       const item = this.activeObstacles[i];
+      item.group.position.z += speed;
 
-      // Move toward player along +Z
-      item.group.position.z += shipSpeed * delta;
-
-      // Handle falling boulder seismic trigger
+      // Falling boulder dynamics: triggers when player is within 80 units
       if (item.type === 'FALLING') {
-        const distZ = Math.abs(item.group.position.z - shipPosition.z);
-        if (distZ < 90) {
+        item.boulderMesh.rotation.x += item.rotSpeedX * delta;
+        item.boulderMesh.rotation.y += item.rotSpeedY * delta;
+
+        const distToShip = -(item.group.position.z - shipPosition.z);
+        if (distToShip < 85 && !item.isFallingTriggered) {
           item.isFallingTriggered = true;
         }
 
-        if (item.isFallingTriggered && item.group.position.y > -1.0) {
-          item.velocityY += delta * 24; // Gravity acceleration
-          item.group.position.y -= item.velocityY * delta;
-          if (item.group.position.y < -1.0) {
-            item.group.position.y = -1.0;
+        if (item.isFallingTriggered && item.group.position.y > 0) {
+          item.velocityY -= delta * 36; // Gravity
+          item.group.position.y += item.velocityY * delta;
+          if (item.group.position.y < 0) {
+            item.group.position.y = 0;
           }
         }
-
-        // Boulder tumble rotation
-        item.boulderMesh.rotation.x += item.rotSpeedX * delta;
-        item.boulderMesh.rotation.y += item.rotSpeedY * delta;
       }
 
-      // Check Dodge event (safely cleared player)
-      if (!item.hasScored && item.group.position.z >= dodgeZ) {
+      // 3. Dodge reward check (when obstacle safely passes behind spaceship)
+      if (!item.hasScored && item.group.position.z > (shipPosition.z + 1.8)) {
         item.hasScored = true;
         this.totalDodged++;
         if (this.onDodge) {
@@ -285,8 +378,8 @@ export class ObstacleManager {
         }
       }
 
-      // Recycle obstacle behind camera
-      if (item.group.position.z > recycleThreshold) {
+      // 4. Recycle obstacles when far behind camera (z > 25)
+      if (item.group.position.z > 25) {
         item.group.visible = false;
         this.activeObstacles.splice(i, 1);
         this.inactivePool.push(item);
@@ -294,7 +387,6 @@ export class ObstacleManager {
     }
   }
 
-  // Precise 3D Collision Detection
   checkCollision(shipPosition, shipRadius = 1.25) {
     for (let i = 0; i < this.activeObstacles.length; i++) {
       const item = this.activeObstacles[i];
@@ -305,39 +397,33 @@ export class ObstacleManager {
       if (dz > 4.5) continue;
 
       if (item.type === 'GATE') {
-        // Compound Ancient Ruin Gate collision:
-        // Left Column: centered at pos.x - 3.8
-        // Right Column: centered at pos.x + 3.8
-        // Top Lintel: centered at pos.y + 12.8
-        // Safe Open Gateway: X between [pos.x - 2.8, pos.x + 2.8], Y under 6.0
+        // Ancient Ruin Gate:
+        // Doorway width: 6.4 units wide, centered at pos.x
+        // Safe gateway opening: X in [pos.x - 2.8, pos.x + 2.8], Y under 6.5
         const dx = shipPosition.x - pos.x;
         const dy = shipPosition.y;
 
-        // Inside open door width & height? SAFE!
-        if (Math.abs(dx) < 2.7 && dy < 5.8) {
-          continue; // Safely navigating through gate archway!
+        // Inside open door width & height? 100% SAFE fly-through!
+        if (Math.abs(dx) < 2.8 && dy < 6.5) {
+          continue;
         }
 
-        // Check if hitting left column
-        const hitLeftCol = Math.abs(dx - (-3.8)) < (0.95 + shipRadius) && dz < (1.5 + shipRadius);
-        // Check if hitting right column
-        const hitRightCol = Math.abs(dx - 3.8) < (0.95 + shipRadius) && dz < (1.5 + shipRadius);
-        // Check if hitting top lintel
-        const hitTopLintel = Math.abs(dx) < 4.5 && dy > 5.5 && dz < (1.6 + shipRadius);
+        // Check if hitting left column, right column, or top lintel
+        const hitLeftCol = Math.abs(dx - (-4.4)) < (1.3 + shipRadius) && dz < (2.0 + shipRadius);
+        const hitRightCol = Math.abs(dx - 4.4) < (1.3 + shipRadius) && dz < (2.0 + shipRadius);
+        const hitTopLintel = Math.abs(dx) < 6.0 && dy > 6.8 && dz < (2.0 + shipRadius);
 
         if (hitLeftCol || hitRightCol || hitTopLintel) {
           return true;
         }
       } else if (item.type === 'PILLAR') {
-        // Cylindrical distance test (X & Z)
         const dx = shipPosition.x - pos.x;
         const distXZ = Math.sqrt(dx * dx + dz * dz);
-        const pillarRadius = 1.55 * item.scale;
+        const pillarRadius = 1.8 * item.scale;
         if (distXZ < (pillarRadius + shipRadius)) {
           return true;
         }
       } else if (item.type === 'SPIRE') {
-        // Tilted spire collision
         const dx = shipPosition.x - pos.x;
         const distXZ = Math.sqrt(dx * dx + dz * dz);
         const spireRadius = 1.65 * item.scale;
@@ -345,7 +431,6 @@ export class ObstacleManager {
           return true;
         }
       } else if (item.type === 'FALLING') {
-        // Sphere distance test in 3D
         const dx = shipPosition.x - pos.x;
         const dy = shipPosition.y - pos.y;
         const dist3D = Math.sqrt(dx * dx + dy * dy + dz * dz);
@@ -354,7 +439,6 @@ export class ObstacleManager {
           return true;
         }
       } else if (item.type === 'CRYSTAL') {
-        // Crystal cluster test
         const dx = shipPosition.x - pos.x;
         const distXZ = Math.sqrt(dx * dx + dz * dz);
         const crystalRadius = 1.35 * item.scale;
@@ -386,11 +470,9 @@ export class ObstacleManager {
     this.activeObstacles = [];
     this.inactivePool = [];
 
-    // Dispose shared geometries
     for (const key of Object.keys(this.geos)) {
       if (this.geos[key]) this.geos[key].dispose();
     }
-    // Dispose shared materials
     for (const key of Object.keys(this.mats)) {
       if (this.mats[key]) this.mats[key].dispose();
     }

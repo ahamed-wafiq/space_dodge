@@ -1,82 +1,59 @@
 # Space Dodge: Alien Canyon — Task Tracker & Verification Record
 
-## Current Project Status: `ALL PHASES COMPLETE & VERIFIED`
+## Current Project Status: `CRITICAL VISUAL REWORK COMPLETE & VERIFIED`
 
 | Phase | Description | Status | Verification Result |
 |---|---|---|---|
 | **Phase 1** | Audit and Architecture | `DONE` | Architectural plan, modular components, and workflows updated |
-| **Phase 2** | 3D Planet Environment | `DONE` | Volcanic floor, magma fissures, cliff walls ($X=\pm 18$), ancient arches, spores |
-| **Phase 3** | Endless Gameplay & Obstacles | `DONE` | Monolith pillars, ancient ruin gates, spires, falling boulders, crystals |
+| **Phase 2** | 3D Planet Environment | `DONE` | Volcanic floor, subtle flight guide ribbons, cliff walls ($X=\pm 19$), ancient arches, spores |
+| **Phase 3** | Endless Gameplay & Obstacles | `DONE` | Blender GLTF rock pillars, alien ruin gates (fly-through doorway), spires, boulders, crystals |
 | **Phase 4** | Professional UI/UX & HUD | `DONE` | Alien Canyon theming, decoupled 60 FPS HUD telemetry, mobile touch |
 | **Phase 5** | Memory & Performance | `DONE` | Zero-GC segment and obstacle pooling, WebGL disposal, flat heap |
-| **Phase 6** | QA, Build & Delivery | `DONE` | `npm run build` passed (0 errors), dev server live on port 5001, GitHub synced |
+| **Phase 6** | QA, Build & Delivery | `DONE` | `npm run build` passed (0 errors), dev server live on port 5001, Blender GLTF assets exported |
 
 ---
 
-## Detailed Task Verification Matrix
+## Critical Visual Rework Verification Matrix
 
-### Phase 1: Audit and Planning `[DONE]`
-- [x] Review existing Three.js scene, entities, and lifecycle.
-- [x] Define Alien Canyon environment specs (volcanic stone, purple fog, cyan crystals, lava veins).
-- [x] Design modular classes: `PlanetEnvironment.js`, `TerrainSegment.js`, `ObstacleManager.js`, `ObstaclePatterns.js`.
-- [x] Update documentation files (`flow.md`, `architecture.md`, `task-tracker.md`, `README.md`).
-- **Result**: Architectural roadmap established with zero external dependencies.
+### 1. Spaceship Model Rework `[DONE]`
+- [x] Generated high-detail 3D model `public/models/spaceship.glb` using Blender MCP & Blender automation script (`scripts/generate_models.py`).
+- [x] Implemented metallic graphite (`#161a22`, metalness: 0.88) and silver bevels (`#b0b8c4`, metalness: 0.94) hull.
+- [x] Sleek cockpit bubble canopy (`#0284c7`, roughness: 0.05, transparent) with cyan neon trims.
+- [x] Swept delta wings with stabilizer winglets and cyan neon strips.
+- [x] Dual cylindrical turbine engine housings with afterburner cowlings.
+- [x] Multi-stage thrusters: white-hot core cone, vibrant cyan outer flame with dynamic flicker, and trailing plasma particle trail.
+- [x] Rear chase camera optimized (`Y = 3.6, Z = 9.2`, lookAt `Y = 1.1, Z = -28`) so ship is readable and well-proportioned (~18% viewport height).
 
-### Phase 2: 3D Planet Environment `[DONE]`
-- [x] Create `TerrainSegment.js` with seamless canyon floor, lava cracks, and flanking rocky cliff walls ($X = \pm 18$).
-- [x] Implement overhead stone arches spanning high across the canyon ($Y \approx 16.5$).
-- [x] Create `PlanetEnvironment.js` coordinating atmospheric purple fog (`0x0e071e`), alien sunlight, lava ground glow, and floating spore/ember particles.
-- [x] Integrate seamless 3-segment recycling pipeline ($3 \times 160 = 480\,\text{units}$) into `GameEngine.js`.
-- **Result**: Continuous unbroken canyon trench rendering at 60 FPS without seams or pop-in.
+### 2. Alien Canyon Environment Rework `[DONE]`
+- [x] Replaced the giant flat orange polygon road with a natural undulating volcanic basalt bedrock floor (`#181c26`, roughness: 0.88).
+- [x] Multi-tiered stratified cliff walls ($X = \pm 19$) with rocky buttresses, basalt columns, and crags.
+- [x] High-altitude ancient alien stone bridges spanning the canyon ($Y = 17$, safely above flight path).
+- [x] Bioluminescent cyan crystal clusters nestled into wall crevices.
+- [x] Alien ringed gas giant planet and atmospheric mountain silhouettes in the distance.
+- [x] Atmospheric cyan/indigo fog (`0x0c1322`, density `0.0058`) providing natural depth fading.
 
-### Phase 3: Endless Gameplay & Realistic Obstacles `[DONE]`
-- [x] Implement `ObstacleManager.js` supporting:
-  - **Monolithic Stone Pillars**: Octagonal columns with irregular volcanic profiles.
-  - **Pillar Pairs / Slalom Gates**: Paired columns requiring rapid lateral steering.
-  - **Ancient Alien Ruin Gates**: Arched portals with safe open doorways the ship can fly through!
-  - **Jagged Rock Spires**: Tilted volcanic obsidian needles.
-  - **Falling Seismic Boulders**: Overhead boulders that drop when the ship gets within 90 units!
-  - **Glowing Alien Crystal Clusters**: High-point crystal hazard near-misses (+200 pts).
-- [x] Implement `ObstaclePatterns.js` with algorithmic safe-lane corridor solver.
-- [x] Implement accurate 3D bounding shapes and compound collision detection.
-- [x] Spawn immediate initial obstacle wave ($Z \in [-55, -95, -135, -175, -215]$).
-- **Result**: Safe corridors verified for every pattern; collision triggers game-over; gate passage allows flight through center.
+### 3. Flight Path Corridor Rework `[DONE]`
+- [x] Eliminated dominating flat orange polygon.
+- [x] Added narrow subtle glowing route centerline ribbon (width 0.35, soft cyan `#00f0ff`, opacity 0.38).
+- [x] Added thin glowing boundary markers at $X = \pm 12.5$ (width 0.12, emissive cyan/teal).
+- [x] Added selective thin magma fissure cracks weaving through basalt crevices.
+- [x] Flight route and obstacle lanes remain clearly visible ahead of the ship.
 
-### Phase 4: Professional UI/UX & HUD `[DONE]`
-- [x] Update UI theme to "Alien Canyon Expeditions — Volcanic Trench Run".
-- [x] Verify 60 FPS decoupled HUD updates (score, warp velocity, survival time, combo multiplier).
-- [x] Update Game Over screen with canyon telemetry stats.
-- [x] Responsive touch pads for mobile/tablet.
-- **Result**: UI accurately reflects canyon flight state with zero React re-render overhead.
+### 4. 3D Obstacles with Blender Models `[DONE]`
+- [x] Generated and integrated `public/models/alien_gate.glb` (carved stone ruin gateway with runic inscriptions and open fly-through portal).
+- [x] Generated and integrated `public/models/rock_pillar.glb` (multi-tiered basalt column with stratified shelves).
+- [x] Preserved procedural geometry fallbacks in `ObstacleManager.js` for instant rendering.
+- [x] Compound collision detection for alien ruin gate: safe fly-through zone ($X \in [-2.8, 2.8]$, $Y < 6.5$) allows flying through the central portal without collision!
+- [x] Jagged volcanic spires, seismic falling boulders (dropping when within 85 units), and glowing cyan crystals.
 
-### Phase 5: Memory Management & Zero-GC Optimization `[DONE]`
-- [x] Zero-GC object pooling across 45 canyon obstacles and 3 canyon terrain segments.
-- [x] Complete WebGL resource disposal on component unmount.
-- [x] Single persistent animation loop across restarts.
-- **Result**: Memory heap profile remains flat; zero garbage collection pauses during long flights.
+### 5. Lighting & Material Response `[DONE]`
+- [x] Added `THREE.HemisphereLight(0x38bdf8, 0x1a1228, 1.4)` to eliminate crushed blacks and reveal geometric silhouettes.
+- [x] Directional cyan-white sun light (`0x93c5fd`, 2.2) casting sharp rim highlights on rock spires and metallic spaceship hull.
+- [x] Subtle amber fill light (`0xf59e0b`, 0.65) on canyon walls for rich color contrast.
+- [x] ACES Filmic Tone Mapping with exposure 1.32.
+- [x] Softened scanlines overlay in `index.css` (opacity reduced from 0.5 to 0.12) and softened vignette.
 
-### Phase 6: QA, Build & Delivery `[DONE]`
-- [x] Execute `npm run build` with zero errors (built in 24.43s).
-- [x] Verify HTTP response on port 5001 (`HTTP/1.1 200 OK`).
-- [x] Synchronize and push all commits to GitHub remote (`main`).
-- **Result**: Production build clean, server live, GitHub updated.
-
----
-
-## Test Execution Log
-
-```
-$ npm run build
-> spacegame@1.0.0 build
-> vite build
-✓ 1585 modules transformed.
-dist/index.html                   1.10 kB │ gzip:   0.62 kB
-dist/assets/index-9Xb4GsC-.css    3.98 kB │ gzip:   1.44 kB
-dist/assets/index-CmXglDqA.js   701.68 kB │ gzip: 189.11 kB
-✓ built in 24.43s
-
-$ curl.exe -I http://localhost:5001/
-HTTP/1.1 200 OK
-Content-Type: text/html
-Connection: keep-alive
-```
+### 6. Technical & Build Verification `[DONE]`
+- [x] Production build `npm run build` completed with 0 errors.
+- [x] Dev server active on port 5001 responding with `HTTP 200 OK`.
+- [x] Verified endless recycling, collision detection, score calculation, and HUD telemetry.
